@@ -1,0 +1,41 @@
+export const openapi = {
+  openapi: '3.0.3',
+  info: {
+    title: 'Servi Choquib API',
+    version: '2.0.0',
+    description: 'API para autenticación, servicios, reservas, mensajería y reseñas.',
+  },
+  servers: [{ url: '/api', description: 'Servidor actual' }],
+  tags: [
+    { name: 'Sistema' }, { name: 'Autenticación' }, { name: 'Servicios' },
+    { name: 'Usuarios' }, { name: 'Reservas' }, { name: 'Mensajes' }, { name: 'Reseñas' }, { name: 'Archivos' },
+  ],
+  components: {
+    securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
+    schemas: {
+      Error: { type: 'object', properties: { error: { type: 'string' } } },
+      User: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, email: { type: 'string', format: 'email' }, phone: { type: 'string' }, role: { type: 'string', enum: ['cliente', 'prestador'] }, avatar: { type: 'string' }, location: { type: 'string' } } },
+      Service: { type: 'object', additionalProperties: true, properties: { id: { type: 'string' }, title: { type: 'string' }, price: { type: 'number' }, ownerId: { type: 'string' }, provider: { type: 'string' } } },
+      Booking: { type: 'object', additionalProperties: true, properties: { id: { type: 'string' }, service_id: { type: 'string' }, status: { type: 'string' }, total: { type: 'number' } } },
+      Message: { type: 'object', properties: { id: { type: 'string' }, sender_id: { type: 'string' }, receiver_id: { type: 'string' }, text: { type: 'string' }, attachment: { nullable: true }, created_at: { type: 'string', format: 'date-time' } } },
+    },
+  },
+  paths: {
+    '/health': { get: { tags: ['Sistema'], summary: 'Estado de la API', responses: { 200: { description: 'API disponible' } } } },
+    '/login': { post: { tags: ['Autenticación'], summary: 'Iniciar sesión', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['identifier', 'password'], properties: { identifier: { type: 'string', format: 'email' }, password: { type: 'string', format: 'password' } } } } } }, responses: { 200: { description: 'Usuario y token JWT' }, 401: { description: 'Credenciales inválidas', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } } } } },
+    '/register': { post: { tags: ['Autenticación'], summary: 'Crear una cuenta', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['name', 'email', 'password'], properties: { name: { type: 'string' }, email: { type: 'string', format: 'email' }, password: { type: 'string', minLength: 8, format: 'password' }, phone: { type: 'string' }, role: { type: 'string', enum: ['cliente', 'prestador'] } } } } } }, responses: { 201: { description: 'Usuario creado' }, 409: { description: 'Correo ya registrado' } } } },
+    '/me': { get: { tags: ['Autenticación'], summary: 'Usuario autenticado', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Usuario' } } } },
+    '/profile': { get: { tags: ['Autenticación'], summary: 'Ver perfil', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Perfil' } } }, put: { tags: ['Autenticación'], summary: 'Actualizar perfil', security: [{ bearerAuth: [] }], requestBody: { content: { 'application/json': { schema: { type: 'object', additionalProperties: true } } } }, responses: { 200: { description: 'Perfil actualizado' } } } },
+    '/services': { get: { tags: ['Servicios'], summary: 'Listar servicios', responses: { 200: { description: 'Servicios' } } }, post: { tags: ['Servicios'], summary: 'Publicar servicio', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', additionalProperties: true, properties: { title: { type: 'string' }, price: { type: 'number' } } } } } }, responses: { 201: { description: 'Servicio creado' } } } },
+    '/services/{id}': { parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], put: { tags: ['Servicios'], summary: 'Actualizar servicio propio', security: [{ bearerAuth: [] }], requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Service' } } } }, responses: { 200: { description: 'Servicio actualizado' }, 404: { description: 'No encontrado' } } }, delete: { tags: ['Servicios'], summary: 'Eliminar servicio propio', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Servicio eliminado' } } } },
+    '/contacts': { get: { tags: ['Usuarios'], summary: 'Listar contactos', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Contactos' } } } },
+    '/users/{id}': { get: { tags: ['Usuarios'], summary: 'Ver usuario y sus servicios', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Perfil público' } } } },
+    '/bookings': { get: { tags: ['Reservas'], summary: 'Listar reservas propias', security: [{ bearerAuth: [] }], responses: { 200: { description: 'Reservas' } } }, post: { tags: ['Reservas'], summary: 'Crear reserva', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['serviceId', 'date'], properties: { serviceId: { type: 'string' }, date: { type: 'string' }, note: { type: 'string' } } } } } }, responses: { 201: { description: 'Reserva creada' } } } },
+    '/bookings/{id}': { put: { tags: ['Reservas'], summary: 'Cambiar estado de una reserva', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string' } } } } } }, responses: { 200: { description: 'Reserva actualizada' } } } },
+    '/messages': { get: { tags: ['Mensajes'], summary: 'Listar mensajes', security: [{ bearerAuth: [] }], parameters: [{ name: 'with', in: 'query', schema: { type: 'string' } }], responses: { 200: { description: 'Mensajes' } } }, post: { tags: ['Mensajes'], summary: 'Enviar mensaje', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['receiverId'], properties: { receiverId: { type: 'string' }, text: { type: 'string' }, attachment: {} } } } } }, responses: { 201: { description: 'Mensaje enviado' } } } },
+    '/messages/{id}': { put: { tags: ['Mensajes'], summary: 'Editar mensaje propio', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['text'], properties: { text: { type: 'string' } } } } } }, responses: { 200: { description: 'Mensaje actualizado' } } }, delete: { tags: ['Mensajes'], summary: 'Eliminar mensaje propio', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Mensaje eliminado' } } } },
+    '/conversations/{contactId}': { delete: { tags: ['Mensajes'], summary: 'Eliminar conversación', security: [{ bearerAuth: [] }], parameters: [{ name: 'contactId', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Conversación eliminada' } } } },
+    '/reviews': { post: { tags: ['Reseñas'], summary: 'Crear reseña', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', additionalProperties: true } } } }, responses: { 201: { description: 'Reseña creada' } } } },
+    '/uploads': { post: { tags: ['Archivos'], summary: 'Subir archivo', requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } } } } }, responses: { 201: { description: 'Archivo subido' } } } },
+  },
+};

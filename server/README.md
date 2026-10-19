@@ -17,6 +17,12 @@ npm run dev
 - Carlos: `carlos@email.com` / `carlos12345`
 - Marco: `marco@email.com` / `marco12345`
 
+## Swagger
+
+Con el servidor iniciado, abre `http://localhost:4000/api-docs`. El contrato OpenAPI en formato JSON está disponible en `http://localhost:4000/api-docs.json`.
+
+Para probar rutas protegidas, inicia sesión en `POST /api/login`, copia el valor de `token` y pégalo en **Authorize** como Bearer token.
+
 ## Capas
 
 - `config/`: variables de entorno.
