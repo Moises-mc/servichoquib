@@ -76,40 +76,50 @@ function configureSockets(io) {
   });
 }
 
-export function createApp() {
+export function createApp({ enableSockets = true, enableLocalUploads = true, beforeRoutes = null } = {}) {
   const app = express();
-  const httpServer = http.createServer(app);
-  const io = new Server(httpServer, {
+  const httpServer = enableSockets ? http.createServer(app) : null;
+  const io = enableSockets ? new Server(httpServer, {
     cors: { origin: env.clientOrigins, credentials: true },
-  });
-  configureSockets(io);
+  }) : null;
+  if (io) configureSockets(io);
 
-  const uploadPath = path.resolve(process.cwd(), env.uploadDir);
-  fs.mkdirSync(uploadPath, { recursive: true });
-  const storage = multer.diskStorage({
-    destination: (_req, _file, callback) => callback(null, uploadPath),
-    filename: (_req, file, callback) => {
-      const extension = path.extname(file.originalname).toLowerCase().slice(0, 10);
-      callback(null, `${Date.now()}-${randomUUID()}${extension}`);
-    },
-  });
-  const upload = multer({
-    storage,
-    limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
-    fileFilter: (_req, file, callback) => {
-      if (!ALLOWED_UPLOAD_TYPES.has(file.mimetype)) {
-        const error = new Error('Tipo de archivo no permitido. Usa imágenes, PDF o texto plano.');
-        error.status = 415;
-        return callback(error);
-      }
-      return callback(null, true);
-    },
-  });
+  // Vercel Functions tienen un sistema de archivos de solo lectura; las cargas
+  // persistentes deben enviarse a Blob/S3, no al disco del proceso.
+  const uploadPath = enableLocalUploads ? path.resolve(process.cwd(), env.uploadDir) : null;
+  let upload = null;
+  if (enableLocalUploads) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+    const storage = multer.diskStorage({
+      destination: (_req, _file, callback) => callback(null, uploadPath),
+      filename: (_req, file, callback) => {
+        const extension = path.extname(file.originalname).toLowerCase().slice(0, 10);
+        callback(null, `${Date.now()}-${randomUUID()}${extension}`);
+      },
+    });
+    upload = multer({
+      storage,
+      limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
+      fileFilter: (_req, file, callback) => {
+        if (!ALLOWED_UPLOAD_TYPES.has(file.mimetype)) {
+          const error = new Error('Tipo de archivo no permitido. Usa imágenes, PDF o texto plano.');
+          error.status = 415;
+          return callback(error);
+        }
+        return callback(null, true);
+      },
+    });
+  }
 
   app.disable('x-powered-by');
   app.use(...security);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
+  if (beforeRoutes) {
+    app.use((req, res, next) => {
+      Promise.resolve().then(() => beforeRoutes(req, res)).then(() => next()).catch(next);
+    });
+  }
   app.use('/api', apiLimiter);
 
   app.get('/api/health', async (_req, res, next) => {
@@ -132,8 +142,10 @@ export function createApp() {
 
   app.use('/api', authRoutes);
   app.use('/api', appRoutes);
-  app.post('/api/uploads', auth, upload.single('file'), uploadFile);
-  app.use('/uploads', express.static(uploadPath, { fallthrough: false, index: false }));
+  if (enableLocalUploads && upload) {
+    app.post('/api/uploads', auth, upload.single('file'), uploadFile);
+    app.use('/uploads', express.static(uploadPath, { fallthrough: false, index: false }));
+  }
 
   app.use(notFoundHandler);
   app.use(errorHandler);

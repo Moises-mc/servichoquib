@@ -3,11 +3,16 @@ import { env } from '../config/env.js';
 
 const { Pool } = pg;
 let activePool = new Pool({
-  host: env.db.host,
-  port: env.db.port,
-  database: env.db.database,
-  user: env.db.user,
-  password: env.db.password,
+  ...(env.db.connectionString
+    ? { connectionString: env.db.connectionString }
+    : {
+        host: env.db.host,
+        port: env.db.port,
+        database: env.db.database,
+        user: env.db.user,
+        password: env.db.password,
+      }),
+  ...(env.db.ssl ? { ssl: { rejectUnauthorized: env.db.sslRejectUnauthorized } } : {}),
   max: env.db.poolMax,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 7_000,
@@ -40,7 +45,8 @@ export async function initializeDatabase() {
   const migrationPath = fileURLToPath(new URL('./migrations/001_initial.sql', import.meta.url));
   const migration = (await readFile(migrationPath, 'utf8')).replaceAll('{{schema}}', schema);
   await activePool.query(migration);
-  await activePool.query(`SET search_path TO ${schema}, public`);
+  // No ejecutar SET search_path: Neon pooled usa PgBouncer en modo transaccional.
+  // Todos los modelos referencian el esquema explícitamente mediante table().
   return true;
 }
 

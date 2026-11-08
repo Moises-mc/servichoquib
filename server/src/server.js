@@ -7,14 +7,17 @@ import { seedDemoData } from './store/seed.js';
 
 export async function startServer({ port = env.port } = {}) {
   await initializeDatabase();
-  await seedDemoData();
+  if (env.seedDemoData) await seedDemoData();
   const server = createApp();
   await new Promise((resolve, reject) => {
     server.httpServer.once('error', reject);
-    server.httpServer.listen(port, resolve);
+    server.httpServer.listen(port, '0.0.0.0', resolve);
   });
-  console.log(`Servi Choquib API disponible en http://localhost:${port}`);
-  console.log(`PostgreSQL conectado: ${env.db.host}:${env.db.port}/${env.db.database} (esquema ${env.db.schema})`);
+  console.log(`Servi Choquib API escuchando en el puerto ${port}`);
+  const databaseTarget = env.db.connectionString
+    ? 'DATABASE_URL configurada'
+    : `${env.db.host}:${env.db.port}/${env.db.database}`;
+  console.log(`PostgreSQL conectado: ${databaseTarget} (esquema ${env.db.schema})`);
   return server;
 }
 

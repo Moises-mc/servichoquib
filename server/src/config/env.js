@@ -5,8 +5,11 @@ import { fileURLToPath } from 'node:url';
 dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
 
 const nodeEnv = process.env.NODE_ENV || 'development';
+const defaultClientOrigins = nodeEnv === 'production'
+  ? ''
+  : 'http://localhost:5500,http://127.0.0.1:5500,https://moises-mc.github.io';
 const configuredOrigins = String(
-  process.env.CLIENT_ORIGIN || 'http://localhost:5500,http://127.0.0.1:5500',
+  process.env.CLIENT_ORIGIN ?? defaultClientOrigins,
 )
   .split(',')
   .map(value => value.trim())
@@ -32,6 +35,9 @@ for (const value of configuredOrigins) {
 }
 
 const clientOrigins = [...allowedOrigins];
+if (nodeEnv === 'production' && clientOrigins.length === 0) {
+  throw new Error('En producción debes configurar CLIENT_ORIGIN con el origen HTTPS exacto del frontend (por ejemplo https://moises-mc.github.io).');
+}
 
 export const env = {
   nodeEnv,
@@ -41,7 +47,9 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   paymentsMode: process.env.PAYMENTS_MODE || 'sandbox',
+  seedDemoData: String(process.env.SEED_DEMO_DATA ?? (nodeEnv !== 'production')).toLowerCase() === 'true',
   db: {
+    connectionString: String(process.env.DATABASE_URL || '').trim(),
     host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT || 5432),
     database: process.env.DB_NAME || 'postgres',
@@ -49,6 +57,8 @@ export const env = {
     password: process.env.DB_PASSWORD || '',
     schema: process.env.DB_SCHEMA || 'servi_choquib',
     poolMax: Number(process.env.DB_POOL_MAX || 10),
+    ssl: String(process.env.DB_SSL || 'false').toLowerCase() === 'true',
+    sslRejectUnauthorized: String(process.env.DB_SSL_REJECT_UNAUTHORIZED || 'true').toLowerCase() !== 'false',
   },
 };
 
@@ -68,9 +78,9 @@ if (env.nodeEnv === 'production' && env.jwtSecret.length < 32) {
   throw new Error('JWT_SECRET debe tener al menos 32 caracteres en producción.');
 }
 
-if (!env.db.host || !env.db.database || !env.db.user) {
-  throw new Error('DB_HOST, DB_NAME y DB_USER son obligatorios.');
+if (!env.db.connectionString && (!env.db.host || !env.db.database || !env.db.user)) {
+  throw new Error('Configura DATABASE_URL o completa DB_HOST, DB_NAME y DB_USER.');
 }
-if (!env.db.password) {
+if (!env.db.connectionString && !env.db.password) {
   throw new Error('DB_PASSWORD está vacío. Completa server/.env con la contraseña de PostgreSQL.');
 }

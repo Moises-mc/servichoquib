@@ -20,3 +20,11 @@ coverage/
 Thumbs.db
 .vscode/
 .idea/
+
+# Vercel
+.vercel/
+
+# Exportaciones de bases de datos
+*.dump
+*.backup
+*.sql.gz
