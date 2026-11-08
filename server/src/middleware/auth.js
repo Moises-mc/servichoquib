@@ -1,19 +1,23 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { users } from '../store/memory.js';
-
+import { UserModel } from '../models/user.model.js';
 export function auth(req, res, next) {
-  const value = req.headers.authorization || '';
-  const token = value.startsWith('Bearer ') ? value.slice(7) : null;
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) return res.status(401).json({ error: 'Autenticación requerida.' });
+  let payload;
   try {
-    const payload = jwt.verify(token, env.jwtSecret);
-    req.user = users.find(user => user.id === payload.id);
-    if (!req.user) throw new Error('Usuario no encontrado');
-    next();
-  } catch { res.status(401).json({ error: 'Sesión no válida o vencida.' }); }
+    payload = jwt.verify(token, env.jwtSecret);
+  } catch {
+    return res.status(401).json({ error: 'Sesión no válida o vencida.' });
+  }
+  UserModel.findById(payload.id).then(user => {
+    if (!user) return res.status(401).json({ error: 'Sesión no válida o vencida.' });
+    req.auth = payload;
+    req.user = user;
+    return next();
+  }).catch(next);
 }
-
 export function signUser(user) {
-  return jwt.sign({ id: user.id, role: user.role }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
+  return jwt.sign({ id: user.id }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 }

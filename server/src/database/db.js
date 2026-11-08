@@ -1,0 +1,54 @@
+import pg from 'pg';
+import { env } from '../config/env.js';
+
+const { Pool } = pg;
+let activePool = new Pool({
+  host: env.db.host,
+  port: env.db.port,
+  database: env.db.database,
+  user: env.db.user,
+  password: env.db.password,
+  max: env.db.poolMax,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 7_000,
+  application_name: 'servi-choquib-api',
+});
+activePool.on('error', error => {
+  console.error('Error inesperado en el pool PostgreSQL:', error.message);
+});
+
+const schemaName = env.db.schema;
+if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(schemaName)) {
+  throw new Error('DB_SCHEMA solo puede contener letras, números y guion bajo, y no puede iniciar con número.');
+}
+export const schema = `"${schemaName}"`;
+export const table = name => {
+  if (!/^[a-z_]+$/.test(name)) throw new Error('Nombre de tabla no válido.');
+  return `${schema}."${name}"`;
+};
+
+export function query(text, params) {
+  return activePool.query(text, params);
+}
+
+export async function initializeDatabase() {
+  // La conexión valida host, puerto, usuario, contraseña y disponibilidad del servidor.
+  await activePool.query('SELECT 1');
+  await activePool.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
+  const { readFile } = await import('node:fs/promises');
+  const { fileURLToPath } = await import('node:url');
+  const migrationPath = fileURLToPath(new URL('./migrations/001_initial.sql', import.meta.url));
+  const migration = (await readFile(migrationPath, 'utf8')).replaceAll('{{schema}}', schema);
+  await activePool.query(migration);
+  await activePool.query(`SET search_path TO ${schema}, public`);
+  return true;
+}
+
+export async function closeDatabase() {
+  await activePool.end();
+}
+
+// Sustituye el pool únicamente en pruebas automatizadas; nunca se expone por HTTP.
+export function setPoolForTests(pool) {
+  activePool = pool;
+}

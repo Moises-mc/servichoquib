@@ -1,39 +1,44 @@
-# Servi Choquib API
+# Servi Choquib API — PostgreSQL
 
-API Express organizada sin base de datos. El módulo `src/store/memory.js` es el único punto que debes reemplazar cuando conectes SQLite, PostgreSQL o MongoDB.
+API Express con arquitectura MVC y persistencia PostgreSQL usando `pg` (node-postgres).
 
-## Arranque
+## Arranque en Windows PowerShell
 
-```bash
-cd server
-cp .env.example .env
+```powershell
+# Dentro de la carpeta server
 npm install
 npm run dev
 ```
 
-## Demo
+El archivo `server/.env` incluido en el paquete contiene la conexión local que indicó el usuario. Si no existe, copia `.env.example` a `.env` y completa `DB_PASSWORD`.
 
-- Ana: `ana@email.com` / `ana12345`
-- Carlos: `carlos@email.com` / `carlos12345`
-- Marco: `marco@email.com` / `marco12345`
+Al iniciar, el backend prueba la conexión, crea el esquema `servi_choquib` en la base `postgres`, aplica `src/database/migrations/001_initial.sql` y siembra datos demo sin duplicarlos. No hace falta crear tablas desde DBeaver.
 
-## Swagger
+## Configuración PostgreSQL
 
-Con el servidor iniciado, abre `http://localhost:4000/api-docs`. El contrato OpenAPI en formato JSON está disponible en `http://localhost:4000/api-docs.json`.
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=tu_contraseña_local
+DB_SCHEMA=servi_choquib
+DB_POOL_MAX=10
+```
 
-Para probar rutas protegidas, inicia sesión en `POST /api/login`, copia el valor de `token` y pégalo en **Authorize** como Bearer token.
+## Verificación
 
-## Capas
+```powershell
+npm run db:check
+npm test
+npm run check
+```
 
-- `config/`: variables de entorno.
-- `middleware/`: autenticación y seguridad.
-- `routes/`: endpoints de autenticación, servicios, reservas, chat y reseñas.
-- `services/`: reservado para pagos, correo y notificaciones.
-- `store/`: almacenamiento temporal que luego reemplazarás por tu base de datos.
+`npm test` usa `pg-mem` para probar API y modelos sin alterar tu PostgreSQL local. `npm run db:check` comprueba la conexión real configurada en `.env`.
 
-## Pendiente de conectar con proveedor real
 
-- Pago Wompi/PayU.
-- Correo o SMS para recuperación de contraseña.
-- Persistencia de archivos.
-- Repositorio de base de datos.
+## Corrección de reservas sin observación
+
+El campo `bookings.note` es obligatorio en PostgreSQL y tiene por defecto una cadena vacía. El modelo también normaliza `note` a `''` cuando el cliente o la carga inicial no envían ese campo; así no se envía `NULL` explícito (que omitiría el `DEFAULT` de PostgreSQL). Las reservas demo antiguas que se creen por primera vez también incluyen `note: ''`.
+
+Si el servidor se detuvo durante la carga inicial, vuelve a ejecutar `npm run dev`. La siembra es idempotente: conserva las cuentas y servicios que ya se insertaron y completa las reservas y mensajes faltantes sin borrar datos.

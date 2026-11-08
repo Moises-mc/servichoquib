@@ -1,14 +1,76 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
+
+// Resuelve el .env junto a server/package.json aunque el proceso se inicie desde otra carpeta.
+dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
+
+const nodeEnv = process.env.NODE_ENV || 'development';
+const configuredOrigins = String(
+  process.env.CLIENT_ORIGIN || 'http://localhost:5500,http://127.0.0.1:5500',
+)
+  .split(',')
+  .map(value => value.trim())
+  .filter(Boolean);
+
+// En desarrollo, localhost y 127.0.0.1 representan el mismo equipo.
+// Live Server puede abrir la app con cualquiera de los dos hostnames aunque
+// CLIENT_ORIGIN se haya generado previamente con solo uno de ellos.
+const allowedOrigins = new Set();
+for (const value of configuredOrigins) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`CLIENT_ORIGIN contiene un origen inválido: ${value}`);
+  }
+  allowedOrigins.add(parsed.origin);
+
+  if (nodeEnv !== 'production' && ['localhost', '127.0.0.1'].includes(parsed.hostname)) {
+    parsed.hostname = parsed.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
+    allowedOrigins.add(parsed.origin);
+  }
+}
+
+const clientOrigins = [...allowedOrigins];
 
 export const env = {
-  port: Number(process.env.PORT || 4000),
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5500',
+  nodeEnv,
+  port: Number(process.env.PORT || 8000),
+  clientOrigins,
   jwtSecret: process.env.JWT_SECRET || 'development-only-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   paymentsMode: process.env.PAYMENTS_MODE || 'sandbox',
+  db: {
+    host: process.env.DB_HOST || 'localhost',
+    port: Number(process.env.DB_PORT || 5432),
+    database: process.env.DB_NAME || 'postgres',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    schema: process.env.DB_SCHEMA || 'servi_choquib',
+    poolMax: Number(process.env.DB_POOL_MAX || 10),
+  },
 };
 
-if (process.env.NODE_ENV === 'production' && env.jwtSecret === 'development-only-change-me') {
-  throw new Error('JWT_SECRET es obligatorio en producción.');
+if (!Number.isInteger(env.port) || env.port < 1 || env.port > 65535) {
+  throw new Error('PORT debe ser un puerto válido entre 1 y 65535.');
+}
+if (!Number.isInteger(env.db.port) || env.db.port < 1 || env.db.port > 65535) {
+  throw new Error('DB_PORT debe ser un puerto válido entre 1 y 65535.');
+}
+if (!Number.isInteger(env.db.poolMax) || env.db.poolMax < 1 || env.db.poolMax > 50) {
+  throw new Error('DB_POOL_MAX debe estar entre 1 y 50.');
+}
+if (env.nodeEnv === 'production' && (env.jwtSecret === 'development-only-change-me' || env.jwtSecret.includes('pon-aqui'))) {
+  throw new Error('Configura un JWT_SECRET aleatorio; no uses el valor de ejemplo en producción.');
+}
+if (env.nodeEnv === 'production' && env.jwtSecret.length < 32) {
+  throw new Error('JWT_SECRET debe tener al menos 32 caracteres en producción.');
+}
+
+if (!env.db.host || !env.db.database || !env.db.user) {
+  throw new Error('DB_HOST, DB_NAME y DB_USER son obligatorios.');
+}
+if (!env.db.password) {
+  throw new Error('DB_PASSWORD está vacío. Completa server/.env con la contraseña de PostgreSQL.');
 }

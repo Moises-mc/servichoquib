@@ -404,7 +404,22 @@
   </div>
 
   <!-- ─── JAVASCRIPT ───────────────────────────────────────────── -->
-  <script src="script.js"></script>
+  <!-- Aplicación dividida por responsabilidades. Mantener este orden de carga. -->
+  <script src="js/models/app-state.js"></script>
+  <script src="js/utils/ui.helpers.js"></script>
+  <script src="js/services/api.service.js"></script>
+  <script src="js/controllers/auth.controller.js"></script>
+  <script src="js/controllers/navigation.controller.js"></script>
+  <script src="js/views/client.views.js"></script>
+  <script src="js/views/chat.views.js"></script>
+  <script src="js/controllers/chat.controller.js"></script>
+  <script src="js/controllers/booking.controller.js"></script>
+  <script src="js/views/provider-admin.views.js"></script>
+  <script src="js/views/provider-services.view.js"></script>
+  <script src="js/views/profile.view.js"></script>
+  <script src="js/controllers/ui.controller.js"></script>
+  <script src="js/controllers/services.controller.js"></script>
+  <script src="js/controllers/profile.controller.js"></script>
 </body>
 
 </html>

@@ -1,18 +1,22 @@
-# Script para iniciar el backend de Servi Choquib
+# Inicia el backend PostgreSQL de Servi Choquib.
 Set-Location "$PSScriptRoot\server"
 
-# Instala dependencias si no existen
-if (-not (Test-Path "node_modules")) {
-    Write-Host "Instalando dependencias..." -ForegroundColor Yellow
+if (-not (Test-Path "node_modules\pg")) {
+    Write-Host "Instalando dependencias de Servi Choquib..." -ForegroundColor Yellow
     npm install
+    if ($LASTEXITCODE -ne 0) { throw "npm install falló. Revisa la conexión a Internet." }
 }
 
-# Crea .env si no existe
 if (-not (Test-Path ".env")) {
-    Write-Host "Creando .env desde .env.example..." -ForegroundColor Yellow
     Copy-Item ".env.example" ".env"
-    Write-Host "Archivo .env creado. Edítalo si necesitas cambiar la configuración." -ForegroundColor Cyan
+    Write-Host "Se creó server/.env. Completa DB_PASSWORD antes de continuar." -ForegroundColor Yellow
+    notepad .env
+    exit 1
 }
 
-Write-Host "Iniciando servidor en http://localhost:8000 ..." -ForegroundColor Green
-node src/server.js
+Write-Host "Comprobando conexión a PostgreSQL..." -ForegroundColor Cyan
+npm run db:check
+if ($LASTEXITCODE -ne 0) { throw "PostgreSQL no está disponible. Comprueba el servicio y server/.env." }
+
+Write-Host "Iniciando Servi Choquib API en http://localhost:8000 ..." -ForegroundColor Green
+npm run dev

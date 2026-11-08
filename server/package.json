@@ -3,9 +3,14 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "node --watch src/server.js", "start": "node src/server.js" },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test",
+    "check": "node scripts/check.js",
+    "db:check": "node scripts/db-check.js"
+  },
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -14,6 +19,13 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "pg": "^8.23.1"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.14"
   }
 }
