@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+<<<<<<< HEAD
   "framework": "express",
   "functions": {
     "index.js": {
@@ -8,3 +9,7 @@
     }
   }
 }
+=======
+  "framework": "express"
+}
+>>>>>>> 52adfa62bf9357debbbc3643965aff4603a96714

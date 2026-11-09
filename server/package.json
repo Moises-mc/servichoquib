@@ -18,12 +18,12 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "socket.io": "^4.8.1",
-    "pg": "^8.23.1"
+    "multer": "^2.5.0",
+    "pg": "^8.23.1",
+    "socket.io": "^4.8.1"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": "24.x"
   },
   "devDependencies": {
     "pg-mem": "^3.0.14"
