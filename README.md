@@ -4,7 +4,7 @@ Proyecto de marketplace de servicios con frontend HTML/CSS/JavaScript y API Node
 
 ## Publicación recomendada
 
-Consulta [`DEPLOY_VERCEL_NEON.md`](DEPLOY_VERCEL_NEON.md) para exportar el esquema `servi_choquib` desde el PostgreSQL actual, importarlo a Neon y desplegar frontend + API REST en Vercel desde un solo repositorio.
+Consulta [`CORRECCION_VERCEL.md`](CORRECCION_VERCEL.md) para el diagnóstico y redepliegue; y [`DEPLOY_VERCEL_NEON.md`](DEPLOY_VERCEL_NEON.md) para exportar el esquema `servi_choquib` desde el PostgreSQL actual, importarlo a Neon y desplegar frontend + API REST en Vercel desde un solo repositorio.
 
 - Vercel sirve `public/` como frontend y `index.js` como Express Function.
 - La API usa el mismo dominio bajo `/api`.
@@ -13,7 +13,7 @@ Consulta [`DEPLOY_VERCEL_NEON.md`](DEPLOY_VERCEL_NEON.md) para exportar el esque
 
 ## Desarrollo local
 
-Requisitos: Node.js 20 o superior y PostgreSQL. Desde `server/`, crea `.env` a partir de `.env.example`, completa `DB_PASSWORD`, y ejecuta:
+Requisitos: Node.js 24 LTS y PostgreSQL. Desde `server/`, crea `.env` a partir de `.env.example`, completa la conexión PostgreSQL, y ejecuta:
 
 ```powershell
 npm install

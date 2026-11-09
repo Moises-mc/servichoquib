@@ -1,4 +1,3 @@
-import express from 'express';
 import { createApp } from './server/src/app.js';
 import { env } from './server/src/config/env.js';
 import { initializeDatabase } from './server/src/database/db.js';
