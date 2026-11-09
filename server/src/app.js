@@ -111,6 +111,7 @@ export function createApp({ enableSockets = true, enableLocalUploads = true, bef
     });
   }
 
+  app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(...security);
   app.use(express.json({ limit: '2mb' }));

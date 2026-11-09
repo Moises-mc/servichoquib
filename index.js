@@ -10,11 +10,11 @@ let initializationPromise;
 async function initializeOnce() {
   if (!initializationPromise) {
     initializationPromise = (async () => {
-      await initializeDatabase();
-      if (env.seedDemoData) await seedDemoData();
+      const initialized = await initializeDatabase();
+      if (initialized && env.seedDemoData) await seedDemoData();
     })().catch(error => {
+      console.warn('[DB] Inicialización de base de datos diferida:', error.message);
       initializationPromise = null;
-      throw error;
     });
   }
   return initializationPromise;
