@@ -1,22 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/index.js"
-    },
-    {
-      "source": "/api-docs(.*)",
-      "destination": "/index.js"
-    },
-    {
-      "source": "/swagger-init.js",
-      "destination": "/index.js"
-    }
-  ],
+  "framework": "express",
   "functions": {
     "index.js": {
-      "includeFiles": "server/src/database/migrations/**/*.sql",
+      "includeFiles": [
+        "server/src/database/migrations/**/*.sql",
+        "public/**"
+      ],
       "maxDuration": 30
     }
   }

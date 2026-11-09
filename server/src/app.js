@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import multer from 'multer';
@@ -118,12 +119,15 @@ export function createApp({ enableSockets = true, enableLocalUploads = true, bef
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 
   // Servir frontend estático si Express recibe peticiones a la raíz o recursos
-  const publicPath = path.resolve(process.cwd(), 'public');
+  const publicPath = fs.existsSync(path.resolve(process.cwd(), 'public'))
+    ? path.resolve(process.cwd(), 'public')
+    : fileURLToPath(new URL('../../public', import.meta.url));
+
   if (fs.existsSync(publicPath)) {
     app.use(express.static(publicPath));
   }
   app.get('/', (_req, res) => {
-    const indexPath = path.resolve(process.cwd(), 'public/index.html');
+    const indexPath = path.join(publicPath, 'index.html');
     if (fs.existsSync(indexPath)) {
       return res.sendFile(indexPath);
     }
