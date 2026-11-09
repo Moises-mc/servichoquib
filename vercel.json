@@ -1,10 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "express",
-  "functions": {
-    "index.js": {
-      "includeFiles": "server/src/database/migrations/**/*.sql",
-      "maxDuration": 30
-    }
-  }
+  "framework": "express"
 }
