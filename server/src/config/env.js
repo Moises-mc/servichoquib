@@ -1,8 +1,13 @@
-import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 
-// Resuelve el .env junto a server/package.json aunque el proceso se inicie desde otra carpeta.
-dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
+// dotenv solo es necesario para desarrollo local.
+if (process.env.NODE_ENV !== 'production') {
+  const { default: dotenv } = await import('dotenv');
+
+  dotenv.config({
+    path: fileURLToPath(new URL('../../.env', import.meta.url))
+  });
+}
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const defaultClientOrigins = nodeEnv === 'production'
