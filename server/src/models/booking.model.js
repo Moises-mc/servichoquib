@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { query, table } from '../database/db.js';
 const BOOKINGS = table('bookings');
-const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date::text AS date, note,
+const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date, note,
   status, total, commission, paid, payment_amount, paid_at, created_at, updated_at`;
 function mapBooking(row) {
   if (!row) return null;
-  return { ...row, total: Number(row.total), commission: Number(row.commission), paid: Number(row.paid), payment_amount: Number(row.payment_amount) };
+  const dateStr = row.date instanceof Date ? row.date.toISOString().slice(0, 10) : String(row.date || '');
+  return { ...row, date: dateStr, total: Number(row.total), commission: Number(row.commission), paid: Number(row.paid), payment_amount: Number(row.payment_amount) };
 }
 export class BookingModel {
   static async findAll() {

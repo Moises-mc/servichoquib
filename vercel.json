@@ -1,6 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "express",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/index.js"
+    },
+    {
+      "source": "/api-docs(.*)",
+      "destination": "/index.js"
+    },
+    {
+      "source": "/swagger-init.js",
+      "destination": "/index.js"
+    }
+  ],
   "functions": {
     "index.js": {
       "includeFiles": "server/src/database/migrations/**/*.sql",
