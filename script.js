@@ -36,9 +36,12 @@ const DEMO_USERS = {
   'sandra@email.com': { id: 'p6', name: 'Sandra Moya', email: 'sandra@email.com', role: 'prestador', avatar: 'SM', location: 'Virtual', password: 'sandra123', rating: 4.9 },
   'admin@servicios.co': { id: 'a1', name: 'Administrador', email: 'admin@servicios.co', role: 'admin', avatar: 'AD', location: 'Servi Choquib HQ', password: 'admin123' },
 };
-const API = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-  ? `${window.location.origin}/api`
-  : 'http://127.0.0.1:8000/api';
+// GitHub Pages solo sirve estáticos → el backend siempre está en Vercel.
+// En desarrollo local se usa el servidor local.
+const VERCEL_BACKEND = 'https://servichoquib.vercel.app/api';
+const isLocalDev = typeof window !== 'undefined'
+  && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const API = isLocalDev ? 'http://127.0.0.1:8000/api' : VERCEL_BACKEND;
 
 let SERVICES = [
   { id: 's1', provider: 'Carlos Mena', avatar: 'CM', category: 'Barbería', title: 'Corte y afeitado clásico', desc: 'Corte moderno con máquina y tijeras, afeitado con navaja y tratamiento capilar incluido. Experiencia de 8 años.', price: 25000, unit: 'por servicio', rating: 4.9, reviews: 143, location: 'Barrio Huapango, Quibdó', img: 'photo-1503951914875-452162b0f3f1', available: true },
