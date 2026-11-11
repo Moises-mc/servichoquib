@@ -36,6 +36,9 @@ const DEMO_BOOKINGS = [
 ];
 
 export async function seedDemoData() {
+  if (env.nodeEnv === 'production') {
+    throw new Error('seedDemoData no debe ejecutarse en producción. Establece SEED_DEMO_DATA=false en las variables de entorno de Vercel.');
+  }
   for (const { password, ...account } of DEMO_ACCOUNTS) {
     if (!(await UserModel.findById(account.id))) {
       await UserModel.create({ ...account, email: account.email.toLowerCase(), passwordHash: await hashPassword(password) });

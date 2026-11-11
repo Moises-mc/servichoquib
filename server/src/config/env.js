@@ -44,8 +44,11 @@ for (const value of configuredOrigins) {
 
 const clientOrigins = [...allowedOrigins];
 
-const fallbackJwtSecret = 'servi-choquib-default-secret-production-change-in-env-2026';
-const configuredJwt = process.env.JWT_SECRET || (nodeEnv === 'production' ? fallbackJwtSecret : 'development-only-change-me');
+// En producción, JWT_SECRET es obligatorio; no hay fallback público.
+if (nodeEnv === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET es obligatorio en producción. Define una cadena aleatoria de al menos 32 caracteres en las variables de entorno de Vercel.');
+}
+const configuredJwt = process.env.JWT_SECRET || 'development-only-change-me';
 
 export const env = {
   nodeEnv,
