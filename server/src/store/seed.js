@@ -3,6 +3,7 @@ import { UserModel } from '../models/user.model.js';
 import { ServiceModel } from '../models/service.model.js';
 import { BookingModel } from '../models/booking.model.js';
 import { MessageModel } from '../models/message.model.js';
+import { env } from '../config/env.js';
 
 const DEMO_ACCOUNTS = [
   { id: 'c1', name: 'Ana García', email: 'ana@email.com', role: 'cliente', avatar: 'AG', location: 'Centro, Quibdó', password: 'ana12345' },
