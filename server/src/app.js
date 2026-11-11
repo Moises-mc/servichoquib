@@ -112,7 +112,7 @@ export function createApp() {
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use('/api', apiLimiter);
 
-  app.get('/api/health'), async (_req, res, next) => {
+  app.get('/api/health', async (_req, res, next) => {
     try {
       const { query } = await import('./database/db.js');
       await query('SELECT 1');
@@ -120,12 +120,7 @@ export function createApp() {
     } catch (error) {
       return next(error);
     }
-  };
-
-  // Vercel puede retirar el prefijo /api antes de entregar la petición a una
-  // Function. Se admiten ambas formas para que GitHub Pages siempre pueda usar
-  // la URL pública estable .../api sin recibir un 404.
-  app.get(['/api/health', '/health'], healthCheck);
+  });
   app.get('/api-docs.json', (_req, res) => res.json(openapi));
   app.get('/swagger-init.js', (_req, res) => res.type('application/javascript').send(
     "window.addEventListener('load', () => SwaggerUIBundle({ url: '/api-docs.json', dom_id: '#swagger-ui', deepLinking: true, persistAuthorization: true }));",
@@ -137,10 +132,7 @@ export function createApp() {
 
   app.use('/api', authRoutes);
   app.use('/api', appRoutes);
-  app.use('/', authRoutes);
-  app.use('/', appRoutes);
   app.post('/api/uploads', auth, upload.single('file'), uploadFile);
-  app.post('/uploads', auth, upload.single('file'), uploadFile);
   app.use('/uploads', express.static(uploadPath, { fallthrough: false, index: false }));
 
   app.use(notFoundHandler);
