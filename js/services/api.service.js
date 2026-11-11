@@ -119,14 +119,16 @@ function handleDemoApiRequest(path, options = {}) {
   }
   if (path === '/messages') {
     const contactId = STATE.chatPartnerId || 'p1';
-    return { messages: STATE.chatMessages.map((message, index) => ({
-      id: message.id || `${contactId}-${index}`,
-      sender_id: message.from === 'me' ? STATE.user.id : contactId,
-      receiver_id: message.from === 'me' ? contactId : STATE.user.id,
-      text: message.text,
-      attachment: message.attachment || null,
-      created_at: new Date().toISOString(),
-    })) };
+    return {
+      messages: STATE.chatMessages.map((message, index) => ({
+        id: message.id || `${contactId}-${index}`,
+        sender_id: message.from === 'me' ? STATE.user.id : contactId,
+        receiver_id: message.from === 'me' ? contactId : STATE.user.id,
+        text: message.text,
+        attachment: message.attachment || null,
+        created_at: new Date().toISOString(),
+      }))
+    };
   }
   if (path.startsWith('/messages?with=')) {
     const contactId = decodeURIComponent(path.split('with=')[1] || '');
