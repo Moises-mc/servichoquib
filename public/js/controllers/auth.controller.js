@@ -161,3 +161,9 @@ function logout() {
 }
 
 // ── Sidebar ────────────────────────────────────────────────────
+
+
+// Exponer explícitamente las acciones usadas por los atributos onclick del HTML.
+window.showLogin = showLogin;
+window.switchAuthTab = switchAuthTab;
+window.selectRole = selectRole;

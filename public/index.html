@@ -421,6 +421,42 @@
   <script src="js/controllers/ui.controller.js"></script>
   <script src="js/controllers/services.controller.js"></script>
   <script src="js/controllers/profile.controller.js"></script>
+  <script>
+    // Respaldo de navegación: permite abrir el formulario de acceso incluso
+    // si el controlador de autenticación no quedó disponible por caché o carga.
+    window.showLogin = window.showLogin || function () {
+      const landing = document.getElementById('landing-screen');
+      const auth = document.getElementById('auth-screen');
+      const login = document.getElementById('login-form');
+      const register = document.getElementById('register-form');
+      const recover = document.getElementById('recover-form');
+      if (!landing || !auth) {
+        console.error('No se encontraron landing-screen o auth-screen en el HTML.');
+        return;
+      }
+      landing.classList.add('hidden');
+      auth.classList.remove('hidden');
+      if (login) login.classList.remove('hidden');
+      if (register) register.classList.add('hidden');
+      if (recover) recover.classList.add('hidden');
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      const loginTab = [...document.querySelectorAll('.tab')].find(tab => /iniciar sesión/i.test(tab.textContent));
+      if (loginTab) loginTab.classList.add('active');
+      document.getElementById('login-email')?.focus();
+    };
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.landing-login-btn, #landing-screen button').forEach(button => {
+        if (button.getAttribute('onclick')?.includes('showLogin')) {
+          button.addEventListener('click', event => {
+            if (typeof window.showLogin !== 'function') {
+              event.preventDefault();
+              console.error('La función de navegación al login no está disponible.');
+            }
+          });
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>
