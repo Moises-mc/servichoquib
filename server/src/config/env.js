@@ -41,9 +41,6 @@ for (const value of configuredOrigins) {
 
 const clientOrigins = [...allowedOrigins];
 
-const fallbackJwtSecret = 'servi-choquib-default-secret-production-change-in-env-2026';
-const configuredJwt = process.env.JWT_SECRET || (nodeEnv === 'production' ? fallbackJwtSecret : 'development-only-change-me');
-
 export const env = {
   nodeEnv,
   port: Number(process.env.PORT || 8000),
@@ -86,6 +83,6 @@ if (env.nodeEnv === 'production' && env.jwtSecret.length < 32) {
 if (!env.db.connectionString && (!env.db.host || !env.db.database || !env.db.user)) {
   throw new Error('Configura DATABASE_URL o completa DB_HOST, DB_NAME y DB_USER.');
 }
-if (!env.db.connectionString && !env.db.password) {
+if (env.nodeEnv !== 'test' && !env.db.connectionString && !env.db.password) {
   throw new Error('DB_PASSWORD está vacío. Completa server/.env con la contraseña de PostgreSQL.');
 }

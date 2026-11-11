@@ -1,34 +1,33 @@
 {
   "name": "servi-choquib",
-  "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
+  "version": "2.2.0",
+  "private": true,
+  "description": "Marketplace de servicios Servi Choquib",
+  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm --prefix server run dev",
+    "start": "node server/src/server.js",
+    "check": "node server/scripts/check.js",
+    "test": "node scripts/test.js",
+    "vercel:check": "node scripts/vercel-preflight.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Moises-mc/servichoquib.git"
+  "engines": {
+    "node": "24.x"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Moises-mc/servichoquib/issues"
-  },
-  "homepage": "https://github.com/Moises-mc/servichoquib#readme",
   "dependencies": {
-    "dotenv": "^18.0.8",
-    "express": "^5.3.0",
-    "promise-mysql": "^5.2.0"
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.5.0",
+    "pg": "^8.23.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "@babel/cli": "^8.0.6",
-    "@babel/core": "^8.0.7",
-    "@babel/node": "^8.0.6",
-    "@babel/preset-env": "^8.0.7",
-    "morgan": "^1.12.1",
-    "nodemon": "^3.1.14"
+    "pg-mem": "^3.0.14"
   }
 }

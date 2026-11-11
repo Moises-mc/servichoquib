@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test",
+    "test": "node ../scripts/test.js",
     "check": "node scripts/check.js",
     "db:check": "node scripts/db-check.js"
   },
@@ -23,7 +23,7 @@
     "socket.io": "^4.8.1"
   },
   "engines": {
-    "node": "26.x"
+    "node": "24.x"
   },
   "devDependencies": {
     "pg-mem": "^3.0.14"

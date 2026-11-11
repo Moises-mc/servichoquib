@@ -1,36 +1,39 @@
-# Servi Choquib — corrección de despliegue Vercel
+# Servi Choquib — correcciones de despliegue Vercel + Neon
 
-## Qué se corrigió en esta versión
+## Correcciones aplicadas
 
-1. Se eliminó la configuración personalizada de empaquetado de `functions` que interfería con la detección automática de Express. Vercel ahora utiliza su integración Express de configuración cero.
-2. Se dejó `index.js` como entrada serverless: exporta la aplicación Express y no ejecuta `listen()` en Vercel.
-3. Se alineó Node.js en `package.json` y `package-lock.json` a Node 24.x.
-4. Se alinearon las dependencias y lockfiles de la raíz y de `server/`, incluyendo `pg` y Multer 2.
-5. Se agregó `.vercelignore` para evitar enviar dependencias instaladas localmente, `.env`, repositorio Git y respaldos.
-6. Se corrigió `public/js/config.js`: GitHub Pages ahora consulta `https://servichoquib.vercel.app/api`; en local usa `http://localhost:8000/api`.
-7. Se corrigió el mapeo del campo `DATE` en reservas para no usar un cast SQL `date::text` que fallaba en las pruebas con pg-mem.
+1. Se alineó el `package.json` raíz con las dependencias que realmente importa el backend (`express`, `pg`, `multer`, `jsonwebtoken`, `socket.io`, etc.).
+2. Se configuró el proyecto raíz como ES Modules (`type: module`), porque `index.js` y el backend utilizan `import`/`export`.
+3. Se alineó Node.js a `24.x` en los manifiestos de instalación.
+4. Se corrigió el pool PostgreSQL para conectarse mediante `DATABASE_URL` cuando está configurada. En ese modo utiliza TLS para Neon y respeta `DB_POOL_MAX`.
+5. Se corrigió el punto de entrada serverless: Vercel exporta la aplicación Express, inicializa la base de datos de forma diferida y no ejecuta `listen()`.
+6. Se implementaron las opciones que el punto de entrada ya enviaba a `createApp`: Socket.IO y almacenamiento local de archivos se desactivan en Vercel.
+7. Se agregó inicialización de base de datos antes de atender rutas API en cada instancia serverless (con una promesa reutilizada por instancia caliente).
+8. Se eliminó `SET search_path` como configuración de sesión, porque una sesión de un pool no garantiza que la siguiente consulta use la misma conexión. Los modelos trabajan con nombres de esquema explícitos.
+9. Se corrigió la URL de API del frontend: en Vercel usa `/api` del mismo dominio; en GitHub Pages apunta a la API publicada en Vercel; en local apunta a `localhost:8000`.
+10. Se agregó un script de pruebas que establece `NODE_ENV=test`, para que los tests no exijan credenciales reales de PostgreSQL.
+11. Se restauró `.env.example` y se mantuvieron fuera del paquete de entrega los secretos y archivos `.env`.
 
-## Antes de subir
+## Verificaciones locales ejecutadas
 
-- En Vercel, **Root Directory** debe ser `./` (raíz del repositorio), no `server/`.
-- Framework Preset: Express (o detección automática).
-- No configures un Output Directory.
-- Asegúrate de que Vercel instale desde el `package.json` de la raíz.
+Desde la raíz:
 
-Si `node_modules` estuvo agregado anteriormente a Git, `.gitignore` no lo elimina del índice. Ejecuta desde PowerShell en la raíz del repositorio:
-
-```powershell
-git rm -r --cached node_modules server/node_modules
-git add .
-git commit -m "Fix Vercel Express deployment and dependencies"
-git push
+```bash
+npm test
+npm run check
+npm run vercel:check
+npm ci --dry-run --ignore-scripts --offline
 ```
 
-Si `git rm` indica que alguna ruta no está en el índice, puedes ignorar ese mensaje para esa ruta. No borres las carpetas locales si necesitas usarlas; el comando `--cached` solo las retira del repositorio.
+Los 12 tests automatizados pasan; la comprobación de sintaxis revisa 52 archivos JavaScript y el preflight confirma los archivos esenciales de Vercel.
 
-## Variables de entorno de Vercel
+## Configuración necesaria en Vercel
 
-Configura en **Settings → Environment Variables** para Production:
+- **Root Directory:** `./` (raíz del repositorio).
+- **Framework Preset:** Express o detección automática.
+- No configures un Output Directory manual.
+- Usa Node.js `24.x`.
+- Configura estas variables para Production (y Preview si corresponde):
 
 | Variable | Valor / requisito |
 |---|---|
@@ -38,34 +41,43 @@ Configura en **Settings → Environment Variables** para Production:
 | `DATABASE_URL` | URL pooled de Neon, con SSL habilitado |
 | `DB_SCHEMA` | `servi_choquib` |
 | `DB_POOL_MAX` | `1` |
-| `CLIENT_ORIGIN` | `https://moises-mc.github.io` |
-| `JWT_SECRET` | Secreto aleatorio propio de al menos 32 caracteres |
+| `CLIENT_ORIGIN` | `https://moises-mc.github.io` si el frontend se sirve desde GitHub Pages; si todo está en Vercel, agrega los orígenes externos que realmente uses |
+| `JWT_SECRET` | secreto aleatorio propio de al menos 32 caracteres |
 | `SEED_DEMO_DATA` | `false` |
 
-No pegues `DATABASE_URL` ni `JWT_SECRET` en GitHub, archivos del frontend, ni conversaciones. No agregues `DB_PASSWORD` cuando usas `DATABASE_URL`. Rota cualquier credencial que haya sido expuesta previamente.
+No configures `DB_HOST=localhost` ni `DB_PASSWORD` en Vercel cuando uses `DATABASE_URL`. La cadena de Neon y el JWT deben guardarse únicamente en Environment Variables de Vercel.
 
-## Comprobaciones locales (PowerShell)
+## Antes de subir los cambios a GitHub
 
-Desde la raíz del proyecto:
+El ZIP original contenía `.git` y `node_modules`; no los incluyas en futuras entregas. Además, el repositorio Git actual tiene archivos de `node_modules` en su índice. Desde PowerShell, en la raíz del repositorio, ejecuta:
 
 ```powershell
-npm ci
-npm run check
-npm test
-npm run vercel:check
+git rm -r --cached node_modules server/node_modules
+git add .
+git commit -m "Fix Vercel deployment and Neon PostgreSQL connection"
+git push
 ```
 
-Desde `server/` también puedes ejecutar `npm ci`, `npm run check` y `npm test`; los dos lockfiles están sincronizados para permitir ambos flujos. Para probar el backend local, crea `server/.env` a partir de `server/.env.example`, completa la conexión PostgreSQL y ejecuta `npm run dev`.
+Si una de las carpetas no está en el índice, Git puede indicar que no la conoce; continúa con la otra. `--cached` no borra las dependencias de tu computador.
 
-## Después del despliegue
+El archivo `server/.env` se excluye del índice Git, pero estaba dentro del ZIP compartido. Si contiene credenciales reales o reutilizadas en producción, cámbialas. Nunca subas `.env` a GitHub.
 
-Prueba estas URLs:
+## Prueba después del despliegue
 
-- `https://servichoquib.vercel.app/`
-- `https://servichoquib.vercel.app/api/health`
+Abre:
 
-La segunda debe responder HTTP 200 y un JSON con `ok: true` y `database: "connected"`. Si desaparece `Cannot find module './router'` pero `/api/health` sigue devolviendo 500, consulta el nuevo Runtime Log: el siguiente error probablemente será de variables de entorno, conexión SSL o migración de Neon, y debe diagnosticarse con ese registro nuevo.
+- `https://TU-PROYECTO.vercel.app/`
+- `https://TU-PROYECTO.vercel.app/api/health`
 
-## Alcance de la verificación
+La segunda dirección debe responder HTTP 200 con `ok: true` y `database: "connected"`.
 
-La causa exacta de `Cannot find module './router'` ocurre dentro del paquete Express empaquetado por Vercel. No es posible reproducir el empaquetado remoto ni verificar la configuración privada del proyecto desde el ZIP. Esta corrección elimina el override de empaquetado, alinea manifiestos/lockfiles y excluye `node_modules` locales para forzar una instalación limpia en Vercel; el resultado definitivo se confirma con un nuevo despliegue.
+Después prueba registro, inicio de sesión, catálogo, reservas, mensajes y persistencia en Neon.
+
+## Funcionalidades que requieren una configuración externa adicional
+
+- Las cargas de archivos locales están desactivadas en Vercel porque el disco de una Function no es almacenamiento persistente. Para habilitarlas en producción hay que integrar Vercel Blob, S3 o R2.
+- Socket.IO queda desactivado en el despliegue serverless actual; la mensajería REST permanece disponible. Para chat en tiempo real se necesita un servicio compatible y una estrategia de reconexión/pub-sub.
+- La recuperación de contraseña necesita un proveedor de correo configurado.
+- Los pagos continúan en modo sandbox.
+
+La conexión real con Neon y el resultado del despliegue remoto no pueden certificarse desde el ZIP: requieren las variables privadas del proyecto y una ejecución en Vercel.

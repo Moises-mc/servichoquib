@@ -58,6 +58,35 @@ after(async () => {
   await closeDatabase();
 });
 
+
+test('modo serverless inicializa antes de las rutas y desactiva sockets y disco local', async () => {
+  let initializationCount = 0;
+  const serverless = createApp({
+    enableSockets: false,
+    enableLocalUploads: false,
+    beforeRoutes: async () => { initializationCount += 1; },
+  });
+  assert.equal(serverless.io, null);
+
+  await new Promise((resolve, reject) => {
+    serverless.httpServer.once('error', reject);
+    serverless.httpServer.listen(0, '127.0.0.1', resolve);
+  });
+  const url = `http://127.0.0.1:${serverless.httpServer.address().port}`;
+  try {
+    const health = await fetch(`${url}/api/health`);
+    assert.equal(health.status, 200);
+    const upload = await fetch(`${url}/api/uploads`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${anaToken}` },
+    });
+    assert.equal(upload.status, 501);
+    assert.equal(initializationCount, 2);
+  } finally {
+    await new Promise(resolve => serverless.httpServer.close(resolve));
+  }
+});
+
 test('el esquema se inicializa y las reservas demo aplican nota vacía por defecto', async () => {
   assert.ok(schema.includes('servi_choquib'));
   const demoBooking = await BookingModel.findById('b1');
