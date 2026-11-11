@@ -32,6 +32,12 @@ No poner la URL de login en `CLIENT_ORIGIN`. CORS compara el origen `https://moi
 5. Probar `https://servichoquib.vercel.app/api/health`.
 6. Probar el login desde `https://moises-mc.github.io/servichoquib/`.
 
+## Corrección adicional de los botones de la página inicial
+
+La política CSP de Helmet permitía scripts externos, pero no permitía atributos de evento HTML (`onclick`). Como los botones de acceso y exploración, además de varias acciones de la aplicación, usan esos atributos, el navegador bloqueaba sus acciones aunque los botones se vieran correctamente.
+
+Se añadió `script-src-attr 'unsafe-inline'` para permitir únicamente atributos de evento. No se añadió `'unsafe-inline'` a `script-src`, por lo que los bloques `<script>` inline siguen bloqueados. Esto mantiene una política más restrictiva que habilitar todos los scripts inline. A largo plazo, la opción más estricta es migrar todos los `onclick` a `addEventListener` y retirar esta excepción.
+
 ## Comprobaciones realizadas
 
 - Pruebas automatizadas: 11 de 11 aprobadas.

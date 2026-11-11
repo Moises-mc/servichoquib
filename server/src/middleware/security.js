@@ -25,6 +25,9 @@ export const security = [
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         'script-src': ["'self'", 'https://unpkg.com'],
+        // La interfaz usa atributos onclick en el HTML y en vistas generadas.
+        // Permitir solo atributos de evento evita habilitar scripts inline completos.
+        'script-src-attr': ["'unsafe-inline'"],
         'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
         'img-src': ["'self'", 'data:', 'blob:'],
       },
