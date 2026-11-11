@@ -1,13 +1,11 @@
-// Configuración del frontend Servi Choquib.
-// Desarrollo local: se configura automáticamente http://localhost:8000/api.
-// Producción (Vercel): frontend y API comparten dominio; se usa /api automáticamente.
-// Para otro hosting, define window.SERVI_API_URL antes de cargar este archivo.
-// No pongas aquí credenciales ni la URL privada de PostgreSQL.
+// URL pública del backend Servi Choquib. GitHub Pages aloja únicamente el frontend.
 (function configureServiChoquibApi() {
   const host = window.location.hostname || '';
   const isLocal = host === 'localhost' || host === '127.0.0.1';
   const configuredUrl = String(window.SERVI_API_URL || '').trim();
-  const localDefault = isLocal ? `servichoquib.vercel.app` : '';
-  const productionDefault = isLocal ? '' : '/api';
-  window.SERVI_API_URL = (configuredUrl || localDefault || productionDefault).replace(/\/+$/, '');
+  const defaultUrl = isLocal
+    ? `http://${host}:8000/api`
+    : 'https://servichoquib.vercel.app/api';
+
+  window.SERVI_API_URL = (configuredUrl || defaultUrl).replace(/\/+$/, '');
 })();

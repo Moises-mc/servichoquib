@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { query, table } from '../database/db.js';
 const BOOKINGS = table('bookings');
-const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date::text AS date, note,
+const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date, note,
   status, total, commission, paid, payment_amount, paid_at, created_at, updated_at`;
 function mapBooking(row) {
   if (!row) return null;
-  return { ...row, total: Number(row.total), commission: Number(row.commission), paid: Number(row.paid), payment_amount: Number(row.payment_amount) };
+  const date = row.date instanceof Date ? row.date.toISOString().slice(0, 10) : String(row.date || '').slice(0, 10);
+  return { ...row, date, total: Number(row.total), commission: Number(row.commission), paid: Number(row.paid), payment_amount: Number(row.payment_amount) };
 }
 export class BookingModel {
   static async findAll() {
@@ -28,21 +29,23 @@ export class BookingModel {
     // Los campos opcionales deben usar los mismos valores por defecto que el esquema.
   // Enviar NULL explícitamente evita que PostgreSQL aplique DEFAULT ''.
   const defaults = { note: '', commission: 0, paid: 0, payment_amount: 0 };
-  const values = fields.map(field => data[field] ?? defaults[field] ?? null);
-    const placeholders = values.map((_, index) => `$${index + 1}`);
-    const { rows } = await query(
-      `INSERT INTO ${BOOKINGS} (id, ${fields.join(', ')}) VALUES ($${values.length + 1}, ${placeholders.join(', ')}) RETURNING ${SELECT}`,
-      [...values, id],
-    );
+    const values = fields.map(k => (data[k] !== undefined ? data[k] : defaults[k] ?? null));
+    const placeholders = fields.map((_, i) => `$${i + 2}`).join(', ');
+    const sql = `INSERT INTO ${BOOKINGS} (id, ${fields.join(', ')}) VALUES ($1, ${placeholders}) RETURNING ${SELECT}`;
+    const { rows } = await query(sql, [id, ...values]);
     return mapBooking(rows[0]);
   }
-  static async update(booking, changes) {
-    const allowed = new Map([['status','status'], ['paid','paid'], ['payment_amount','payment_amount'], ['paid_at','paid_at']]);
-    const entries = Object.entries(changes).filter(([key]) => allowed.has(key));
-    if (!entries.length) return this.findById(booking.id);
-    const assignments = entries.map(([key], index) => `"${allowed.get(key)}" = $${index + 1}`);
-    const values = entries.map(([, value]) => value);
-    const { rows } = await query(`UPDATE ${BOOKINGS} SET ${assignments.join(', ')}, updated_at = NOW() WHERE id = $${values.length + 1} RETURNING ${SELECT}`, [...values, String(booking.id)]);
+  static async updateStatus(id, status, extra = {}) {
+    const setClauses = ['status = $2'];
+    const params = [String(id), status];
+    let idx = 3;
+    if (extra.paid !== undefined) { setClauses.push(`paid = $${idx++}`); params.push(extra.paid); }
+    if (extra.payment_amount !== undefined) { setClauses.push(`payment_amount = $${idx++}`); params.push(extra.payment_amount); }
+    if (extra.paid_at !== undefined) { setClauses.push(`paid_at = $${idx++}`); params.push(extra.paid_at); }
+    const { rows } = await query(
+      `UPDATE ${BOOKINGS} SET ${setClauses.join(', ')} WHERE id = $1 RETURNING ${SELECT}`,
+      params,
+    );
     return mapBooking(rows[0]);
   }
 }

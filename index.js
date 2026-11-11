@@ -5,16 +5,16 @@ import { initializeDatabase } from './server/src/database/db.js';
 import { seedDemoData } from './server/src/store/seed.js';
 
 // Express se despliega como una Vercel Function. Los archivos del frontend
-// viven en /public y son entregados por la CDN de Vercel.
+// viven en /public y son entregados por la CDN de Vercel y Express.
 let initializationPromise;
 async function initializeOnce() {
   if (!initializationPromise) {
     initializationPromise = (async () => {
-      await initializeDatabase();
-      if (env.seedDemoData) await seedDemoData();
+      const initialized = await initializeDatabase();
+      if (initialized && env.seedDemoData) await seedDemoData();
     })().catch(error => {
+      console.warn('[DB] Inicialización de base de datos diferida:', error.message);
       initializationPromise = null;
-      throw error;
     });
   }
   return initializationPromise;

@@ -46,6 +46,6 @@ export async function updateBooking(req, res) {
     changes.payment_amount = 0;
     changes.paid_at = null;
   }
-  const updated = await BookingModel.update(booking, changes);
+  const updated = await BookingModel.updateStatus(req.params.id, nextStatus, changes);
   return res.json({ ok: true, payment_amount: updated.payment_amount || 0, paid: Boolean(updated.paid) });
 }

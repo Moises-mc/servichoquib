@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import multer from 'multer';
@@ -111,10 +112,28 @@ export function createApp({ enableSockets = true, enableLocalUploads = true, bef
     });
   }
 
+  app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(...security);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
+
+  // Servir frontend estático si Express recibe peticiones a la raíz o recursos
+  const publicPath = fs.existsSync(path.resolve(process.cwd(), 'public'))
+    ? path.resolve(process.cwd(), 'public')
+    : fileURLToPath(new URL('../../public', import.meta.url));
+
+  if (fs.existsSync(publicPath)) {
+    app.use(express.static(publicPath));
+  }
+  app.get('/', (_req, res) => {
+    const indexPath = path.join(publicPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    return res.json({ ok: true, message: 'Servi Choquib API activa' });
+  });
+
   if (beforeRoutes) {
     app.use((req, res, next) => {
       Promise.resolve().then(() => beforeRoutes(req, res)).then(() => next()).catch(next);
@@ -124,6 +143,13 @@ export function createApp({ enableSockets = true, enableLocalUploads = true, bef
 
   app.get('/api/health', async (_req, res, next) => {
     try {
+      if (!env.db.connectionString && env.nodeEnv === 'production' && !env.db.password) {
+        return res.status(503).json({
+          ok: false,
+          database: 'disconnected',
+          message: 'DATABASE_URL no configurada en las variables de entorno de Vercel.',
+        });
+      }
       const { query } = await import('./database/db.js');
       await query('SELECT 1');
       return res.json({ ok: true, database: 'connected', service: 'Servi Choquib API' });
