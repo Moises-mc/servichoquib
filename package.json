@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "engines": {
-    "node": "26.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "node server/src/server.js",
