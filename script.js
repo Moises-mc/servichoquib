@@ -36,12 +36,9 @@ const DEMO_USERS = {
   'sandra@email.com': { id: 'p6', name: 'Sandra Moya', email: 'sandra@email.com', role: 'prestador', avatar: 'SM', location: 'Virtual', password: 'sandra123', rating: 4.9 },
   'admin@servicios.co': { id: 'a1', name: 'Administrador', email: 'admin@servicios.co', role: 'admin', avatar: 'AD', location: 'Servi Choquib HQ', password: 'admin123' },
 };
-// GitHub Pages solo sirve estáticos → el backend siempre está en Vercel.
-// En desarrollo local se usa el servidor local.
-const VERCEL_BACKEND = 'https://servichoquib.vercel.app/api';
-const isLocalDev = typeof window !== 'undefined'
-  && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const API = isLocalDev ? 'http://127.0.0.1:8000/api' : VERCEL_BACKEND;
+const API = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+  ? `${window.location.origin}/api`
+  : 'http://127.0.0.1:8000/api';
 
 let SERVICES = [
   { id: 's1', provider: 'Carlos Mena', avatar: 'CM', category: 'Barbería', title: 'Corte y afeitado clásico', desc: 'Corte moderno con máquina y tijeras, afeitado con navaja y tratamiento capilar incluido. Experiencia de 8 años.', price: 25000, unit: 'por servicio', rating: 4.9, reviews: 143, location: 'Barrio Huapango, Quibdó', img: 'photo-1503951914875-452162b0f3f1', available: true },
@@ -197,14 +194,16 @@ function handleDemoApiRequest(path, options = {}) {
   }
   if (path === '/messages') {
     const contactId = STATE.chatPartnerId || 'p1';
-    return { messages: STATE.chatMessages.map((message, index) => ({
-      id: message.id || `${contactId}-${index}`,
-      sender_id: message.from === 'me' ? STATE.user.id : contactId,
-      receiver_id: message.from === 'me' ? contactId : STATE.user.id,
-      text: message.text,
-      attachment: message.attachment || null,
-      created_at: new Date().toISOString(),
-    })) };
+    return {
+      messages: STATE.chatMessages.map((message, index) => ({
+        id: message.id || `${contactId}-${index}`,
+        sender_id: message.from === 'me' ? STATE.user.id : contactId,
+        receiver_id: message.from === 'me' ? contactId : STATE.user.id,
+        text: message.text,
+        attachment: message.attachment || null,
+        created_at: new Date().toISOString(),
+      }))
+    };
   }
   if (path.startsWith('/messages?with=')) {
     const contactId = decodeURIComponent(path.split('with=')[1] || '');
@@ -236,11 +235,11 @@ async function apiRequest(path, options = {}) {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const urls = isLocal
     ? [
-        `${API}${path}`,
-        `http://localhost:8000/api${path}`,
-        `http://127.0.0.1:8000/api${path}`,
-        `http://localhost:4000/api${path}`,
-      ]
+      `${API}${path}`,
+      `http://localhost:8000/api${path}`,
+      `http://127.0.0.1:8000/api${path}`,
+      `http://localhost:4000/api${path}`,
+    ]
     : [`${API}${path}`];
 
   let lastError = null;
