@@ -23,7 +23,7 @@
     "socket.io": "^4.8.1"
   },
   "engines": {
-    "node": "24.x"
+    "node": "26.x"
   },
   "devDependencies": {
     "pg-mem": "^3.0.14"

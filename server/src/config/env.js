@@ -40,9 +40,9 @@ for (const value of configuredOrigins) {
 }
 
 const clientOrigins = [...allowedOrigins];
-if (nodeEnv === 'production' && clientOrigins.length === 0) {
-  throw new Error('En producción debes configurar CLIENT_ORIGIN con el origen HTTPS exacto del frontend (por ejemplo https://moises-mc.github.io).');
-}
+
+const fallbackJwtSecret = 'servi-choquib-default-secret-production-change-in-env-2026';
+const configuredJwt = process.env.JWT_SECRET || (nodeEnv === 'production' ? fallbackJwtSecret : 'development-only-change-me');
 
 export const env = {
   nodeEnv,
