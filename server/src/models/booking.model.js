@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { query, table } from '../database/db.js';
 const BOOKINGS = table('bookings');
-const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date::text AS date, note,
-  status, total, commission, paid, payment_amount, paid_at, created_at, updated_at`;
+const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date, note,  status, total, commission, paid, payment_amount, paid_at, created_at, updated_at`;
 function mapBooking(row) {
   if (!row) return null;
   return { ...row, total: Number(row.total), commission: Number(row.commission), paid: Number(row.paid), payment_amount: Number(row.payment_amount) };
@@ -24,11 +23,11 @@ export class BookingModel {
   }
   static async create(data) {
     const id = data.id || `b_${randomUUID()}`;
-    const fields = ['service_id','client_id','provider_id','title','provider','client','date','note','status','total','commission','paid','payment_amount'];
+    const fields = ['service_id', 'client_id', 'provider_id', 'title', 'provider', 'client', 'date', 'note', 'status', 'total', 'commission', 'paid', 'payment_amount'];
     // Los campos opcionales deben usar los mismos valores por defecto que el esquema.
-  // Enviar NULL explícitamente evita que PostgreSQL aplique DEFAULT ''.
-  const defaults = { note: '', commission: 0, paid: 0, payment_amount: 0 };
-  const values = fields.map(field => data[field] ?? defaults[field] ?? null);
+    // Enviar NULL explícitamente evita que PostgreSQL aplique DEFAULT ''.
+    const defaults = { note: '', commission: 0, paid: 0, payment_amount: 0 };
+    const values = fields.map(field => data[field] ?? defaults[field] ?? null);
     const placeholders = values.map((_, index) => `$${index + 1}`);
     const { rows } = await query(
       `INSERT INTO ${BOOKINGS} (id, ${fields.join(', ')}) VALUES ($${values.length + 1}, ${placeholders.join(', ')}) RETURNING ${SELECT}`,
@@ -37,7 +36,7 @@ export class BookingModel {
     return mapBooking(rows[0]);
   }
   static async update(booking, changes) {
-    const allowed = new Map([['status','status'], ['paid','paid'], ['payment_amount','payment_amount'], ['paid_at','paid_at']]);
+    const allowed = new Map([['status', 'status'], ['paid', 'paid'], ['payment_amount', 'payment_amount'], ['paid_at', 'paid_at']]);
     const entries = Object.entries(changes).filter(([key]) => allowed.has(key));
     if (!entries.length) return this.findById(booking.id);
     const assignments = entries.map(([key], index) => `"${allowed.get(key)}" = $${index + 1}`);
