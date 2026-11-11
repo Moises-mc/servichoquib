@@ -3,7 +3,10 @@
   "framework": "express",
   "functions": {
     "index.js": {
-      "includeFiles": "server/src/database/migrations/**/*.sql",
+      "includeFiles": [
+        "server/src/database/migrations/**/*.sql",
+        "public/**"
+      ],
       "maxDuration": 30
     }
   }

@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import multer from 'multer';
@@ -113,7 +114,32 @@ export function createApp({ app: appInstance, enableSockets = true, enableLocalU
   app.use(...security);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
+
+  // Vercel enruta las solicitudes al handler Express. Servimos el frontend
+  // desde /public para que abrir el dominio raíz no termine en Ruta no encontrada.
+  // Se monta antes de inicializar la BD: la página estática debe cargar incluso
+  // si Neon tiene una interrupción temporal.
+  // Resolver la carpeta desde este archivo, no desde process.cwd(): en Vercel
+  // el directorio de trabajo de una Function puede no coincidir con la raíz
+  // del repositorio. includeFiles en vercel.json empaqueta esta carpeta.
+  const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../public');
+  app.get('/', (_req, res, next) => {
+    res.sendFile(path.join(publicDir, 'index.html'), error => {
+      if (error) next(error);
+    });
+  });
+  app.use(express.static(publicDir, { index: 'index.html', fallthrough: true }));
+
   app.use('/api', apiLimiter);
+  // Respuesta informativa para /api; evita que abrir la raíz de la API devuelva
+  // un 404 ambiguo. Los endpoints funcionales continúan bajo /api/*.
+  app.get('/api', (_req, res) => res.json({
+    name: 'Servi Choquib API',
+    status: 'online',
+    health: '/api/health',
+    documentation: '/api-docs',
+  }));
+
   if (beforeRoutes) {
     app.use(async (_req, _res, next) => {
       try { await beforeRoutes(); next(); } catch (error) { next(error); }
