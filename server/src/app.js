@@ -112,7 +112,7 @@ export function createApp() {
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use('/api', apiLimiter);
 
-  const healthCheck = async (_req, res, next) => {
+  app.get('/api/health'), async (_req, res, next) => {
     try {
       const { query } = await import('./database/db.js');
       await query('SELECT 1');
