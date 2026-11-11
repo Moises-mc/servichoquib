@@ -76,8 +76,8 @@ function configureSockets(io) {
   });
 }
 
-export function createApp({ enableSockets = true, enableLocalUploads = true, beforeRoutes } = {}) {
-  const app = express();
+export function createApp({ app: appInstance, enableSockets = true, enableLocalUploads = true, beforeRoutes } = {}) {
+  const app = appInstance || express();
   const httpServer = http.createServer(app);
   const io = enableSockets ? new Server(httpServer, {
     cors: { origin: env.clientOrigins, credentials: true },
