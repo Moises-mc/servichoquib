@@ -119,14 +119,16 @@ function handleDemoApiRequest(path, options = {}) {
   }
   if (path === '/messages') {
     const contactId = STATE.chatPartnerId || 'p1';
-    return { messages: STATE.chatMessages.map((message, index) => ({
-      id: message.id || `${contactId}-${index}`,
-      sender_id: message.from === 'me' ? STATE.user.id : contactId,
-      receiver_id: message.from === 'me' ? contactId : STATE.user.id,
-      text: message.text,
-      attachment: message.attachment || null,
-      created_at: new Date().toISOString(),
-    })) };
+    return {
+      messages: STATE.chatMessages.map((message, index) => ({
+        id: message.id || `${contactId}-${index}`,
+        sender_id: message.from === 'me' ? STATE.user.id : contactId,
+        receiver_id: message.from === 'me' ? contactId : STATE.user.id,
+        text: message.text,
+        attachment: message.attachment || null,
+        created_at: new Date().toISOString(),
+      }))
+    };
   }
   if (path.startsWith('/messages?with=')) {
     const contactId = decodeURIComponent(path.split('with=')[1] || '');
@@ -154,14 +156,8 @@ async function apiRequest(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (STATE.token) headers.Authorization = `Bearer ${STATE.token}`;
 
-  // Usa una única URL base explícita. En GitHub Pages no hay servidor Node:
-  // js/config.js debe apuntar a la URL HTTPS pública del backend desplegado.
-  if (!API) {
-    throw new Error(
-      'La API no está configurada para este sitio. Edita js/config.js y asigna window.SERVI_API_URL a la URL HTTPS pública del backend, por ejemplo https://tu-api.example.com/api. GitHub Pages solo aloja el frontend.'
-    );
-  }
-
+  // Usa una única URL base. Reintentar contra otros puertos u orígenes ocultaba
+  // los errores CORS y podía enviar POST a Live Server (que responde 405).
   const normalizedPath = String(path).startsWith('/') ? path : `/${path}`;
   const url = `${API}${normalizedPath}`;
 
@@ -170,7 +166,7 @@ async function apiRequest(path, options = {}) {
     response = await fetch(url, { ...options, headers });
   } catch (error) {
     throw new Error(
-      `No se pudo conectar con Servi Choquib API (${url}). Comprueba que el backend esté desplegado y accesible por HTTPS, y que CLIENT_ORIGIN incluya exactamente ${window.location.origin}.`,
+      `No se pudo conectar con Servi Choquib API (${url}). Verifica que el backend esté activo y que CLIENT_ORIGIN incluya el origen del frontend.`,
       { cause: error },
     );
   }
@@ -181,7 +177,7 @@ async function apiRequest(path, options = {}) {
     try {
       data = JSON.parse(responseText);
     } catch {
-      throw new Error('La API respondió con un formato no válido. Comprueba la URL pública configurada en js/config.js y el estado del backend.');
+      throw new Error('La API respondió con un formato no válido. Comprueba que el backend esté ejecutándose en el puerto 8000.');
     }
   }
 
