@@ -17,6 +17,8 @@ const corsOptions = {
 };
 
 export const security = [
+  // CORS se ejecuta antes de Helmet y del rate limiter para responder OPTIONS
+  // (preflight) antes de que Express procese la ruta real.
   cors(corsOptions),
   helmet({
     contentSecurityPolicy: {
@@ -30,30 +32,17 @@ export const security = [
   }),
 ];
 
-// Helper para extraer la IP cliente detrás de proxies (Vercel, AWS Lambda, CDN)
-function getClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.ip || req.socket?.remoteAddress || '127.0.0.1';
-}
-
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 300,
-  standardHeaders: true,
+  standardHeaders: 'draft-8',
   legacyHeaders: false,
-  validate: false,
-  keyGenerator: getClientIp,
 });
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
-  standardHeaders: true,
+  standardHeaders: 'draft-8',
   legacyHeaders: false,
-  validate: false,
-  keyGenerator: getClientIp,
   message: { error: 'Demasiados intentos. Intenta más tarde.' },
 });

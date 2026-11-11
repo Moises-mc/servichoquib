@@ -41,7 +41,7 @@ const DEMO_USERS = {
   'gloria@email.com': { id: 'p8', name: 'Gloria Pino', email: 'gloria@email.com', role: 'prestador', avatar: 'GP', location: 'Todo Quibdó', password: 'gloria12345', rating: 4.7 },
   'admin@servicios.co': { id: 'a1', name: 'Administrador', email: 'admin@servicios.co', role: 'admin', avatar: 'AD', location: 'Servi Choquib HQ', password: 'admin12345' },
 };
-const API = String(window.SERVI_API_URL || '').trim().replace(/\/+$/, '');
+const API = String(window.SERVI_API_URL || `http://${window.location.hostname || '127.0.0.1'}:8000/api`).replace(/\/+$/, '');
 
 let SERVICES = [
   { id: 's1', provider: 'Carlos Mena', avatar: 'CM', category: 'Barbería', title: 'Corte y afeitado clásico', desc: 'Corte moderno con máquina y tijeras, afeitado con navaja y tratamiento capilar incluido. Experiencia de 8 años.', price: 25000, unit: 'por servicio', rating: 4.9, reviews: 143, location: 'Barrio Huapango, Quibdó', img: 'photo-1503951914875-452162b0f3f1', available: true },
