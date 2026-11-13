@@ -11,10 +11,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const defaultClientOrigins = nodeEnv === 'production'
-  ? ''
+  ? 'https://servichoquib.vercel.app'
   : 'http://localhost:5500,http://127.0.0.1:5500,https://moises-mc.github.io';
+// Si CLIENT_ORIGIN existe pero está vacío en Vercel, usar el dominio público
+// de producción en vez de dejar la lista CORS completamente vacía.
 const configuredOrigins = String(
-  process.env.CLIENT_ORIGIN ?? defaultClientOrigins,
+  process.env.CLIENT_ORIGIN || defaultClientOrigins,
 )
   .split(',')
   .map(value => value.trim())

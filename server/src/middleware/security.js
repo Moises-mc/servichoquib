@@ -3,6 +3,8 @@ import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { env } from '../config/env.js';
 
+// El dominio de producción (servichoquib.vercel.app) está incluido en
+// CLIENT_ORIGIN por defecto; los dominios adicionales se configuran en Vercel.
 const corsOptions = {
   origin(origin, callback) {
     if (!origin || env.clientOrigins.includes(origin)) return callback(null, true);
