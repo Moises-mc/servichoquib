@@ -55,7 +55,7 @@ function renderCatalog() {
       ${filtered.map(s => `
         <div class="service-card" onclick="openServiceDetail('${s.id}')">
           <div style="height:160px;overflow:hidden;position:relative;background:#111b54">
-            <img src="https://images.unsplash.com/${s.img}?w=400&h=200&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85" loading="lazy" />
+            <img src="https://images.unsplash.com/${s.img}?w=400&h=200&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:100%;height:100%;object-fit:contain;opacity:0.95" loading="lazy" />
             ${!s.available ? '<div style="position:absolute;inset:0;background:rgba(10,15,46,0.7);display:flex;align-items:center;justify-content:center">' + badge('No disponible', 'red') + '</div>' : ''}
             <div class="service-profession" title="Profesión o categoría">${escapeHtml(s.category)}</div>
       <div style="position:absolute;top:10px;left:10px">${badge(s.available ? 'Disponible' : 'No disponible', s.available ? 'green' : 'red')}</div>
@@ -97,7 +97,7 @@ function onSearchInput(v) {
 function serviceCardHtml(s) {
   return `<div class="service-card" onclick="openServiceDetail('${s.id}')">
     <div style="height:160px;overflow:hidden;position:relative;background:#111b54">
-      <img src="https://images.unsplash.com/${s.img}?w=400&h=200&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85" loading="lazy"/>
+      <img src="https://images.unsplash.com/${s.img}?w=400&h=200&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:100%;height:100%;object-fit:contain;opacity:0.95" loading="lazy"/>
       ${!s.available ? '<div style="position:absolute;inset:0;background:rgba(10,15,46,0.7);display:flex;align-items:center;justify-content:center">' + badge('No disponible', 'red') + '</div>' : ''}
       <div class="service-profession" title="Profesión o categoría">${escapeHtml(s.category)}</div>
     <div style="position:absolute;top:10px;left:10px">${badge(s.available ? 'Disponible' : 'No disponible', s.available ? 'green' : 'red')}</div>

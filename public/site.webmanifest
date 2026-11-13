@@ -1,0 +1,12 @@
+{
+  "name": "Servi Choquib",
+  "short_name": "Servi Choquib",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#03071e",
+  "theme_color": "#03071e",
+  "icons": [
+    {"src": "/assets/servi-choquib-icon.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}

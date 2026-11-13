@@ -338,3 +338,23 @@
       .stat-card { padding: 16px; }
       .activity-row { align-items: flex-start !important; gap: 10px; }
     }
+
+
+    .chat-image { max-width:min(100%, 520px); width:auto; height:auto; max-height:70vh; object-fit:contain; }
+    .chat-image-link { max-width:100%; overflow:hidden; }
+
+
+/* ── Identidad visual Servi Choquib ── */
+.landing-brand { display:inline-flex; align-items:center; min-width:0; }
+.landing-brand .brand-logo { display:block; width:clamp(88px, 12vw, 150px); height:auto; max-height:104px; object-fit:contain; object-position:left center; }
+.auth-brand-image { display:flex; justify-content:center; align-items:center; width:100%; margin:0 auto 14px; }
+.auth-brand-image .brand-logo { display:block; width:min(100%, 250px); height:auto; max-height:220px; object-fit:contain; }
+.brand-symbol { display:block; width:42px; height:42px; flex:0 0 42px; object-fit:contain; border-radius:10px; }
+@media (max-width: 720px) {
+  .landing-header { padding:16px 4vw; gap:12px; }
+  .landing-brand .brand-logo { width:88px; max-height:78px; }
+  .landing-nav { gap:10px; }
+  .landing-nav a { display:none; }
+  .landing-login-btn { padding:9px 12px; font-size:12px; }
+  .auth-brand-image .brand-logo { width:min(72vw, 220px); }
+}
