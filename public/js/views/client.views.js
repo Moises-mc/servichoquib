@@ -1,6 +1,6 @@
 function renderClientDash() {
   const bookings = STATE.bookings.slice(0, 3);
-  const totalSpent = STATE.bookings.reduce((total, booking) => total + (booking.client === STATE.user.name ? Number(booking.total) : 0), 0);
+  const totalSpent = STATE.bookings.filter(booking => Number(booking.paid) === 1 && Number(booking.payment_amount) > 0).reduce((total, booking) => total + Number(booking.payment_amount || 0), 0);
   const pending = STATE.bookings.filter(booking => booking.status === 'pendiente').length;
   const completed = STATE.bookings.filter(booking => booking.status === 'completado').length;
   return `
@@ -9,7 +9,7 @@ function renderClientDash() {
       <button class="btn-primary" onclick="navigate('catalog')">Explorar servicios ${icon('grid')}</button>
     </div>
     <div class="grid-4" style="margin-bottom:28px">
-      ${[[String(STATE.bookings.length), 'Servicios contratados', 'Historial total', '#22d3ee'], [COP(totalSpent), 'Total gastado', 'Reservas registradas', '#818cf8'], [String(pending), 'Solicitudes pendientes', 'Por confirmar', '#fbbf24'], [String(completed), 'Servicios completados', 'Experiencia acumulada', '#4ade80']]
+      ${[[String(STATE.bookings.length), 'Servicios contratados', 'Historial total', '#22d3ee'], [COP(totalSpent), 'Total pagado', 'Pagos confirmados', '#818cf8'], [String(pending), 'Solicitudes pendientes', 'Por confirmar', '#fbbf24'], [String(completed), 'Servicios completados', 'Experiencia acumulada', '#4ade80']]
       .map(([v, l, s, c]) => `<div class="stat-card"><p class="mono" style="font-size:24px;font-weight:700;color:${c};margin:0 0 4px">${v}</p><p style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#e2e8f0;margin:0 0 2px">${l}</p><p style="font-size:12px;color:#64748b;margin:0">${s}</p></div>`).join('')}
     </div>
     <div class="grid-2">

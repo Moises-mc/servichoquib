@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { newDb } from 'pg-mem';
 import { setPoolForTests, initializeDatabase, closeDatabase, schema } from '../src/database/db.js';
 import { createApp } from '../src/app.js';
-import { seedDemoData } from '../src/store/seed.js';
+import { seedDemoData } from './fixtures/demo-seed.js';
 import { BookingModel } from '../src/models/booking.model.js';
 
 let server;
@@ -12,6 +12,7 @@ let baseUrl;
 let anaToken;
 let carlosToken;
 let marcoToken;
+let adminToken;
 
 async function request(path, { token, method = 'GET', body, headers = {} } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -42,14 +43,16 @@ before(async () => {
   });
   baseUrl = `http://127.0.0.1:${server.address().port}`;
 
-  const [ana, carlos, marco] = await Promise.all([
+  const [ana, carlos, marco, admin] = await Promise.all([
     request('/api/login', { method: 'POST', body: { identifier: 'ana@email.com', password: 'ana12345' } }),
     request('/api/login', { method: 'POST', body: { identifier: 'carlos@email.com', password: 'carlos12345' } }),
     request('/api/login', { method: 'POST', body: { identifier: 'marco@email.com', password: 'marco12345' } }),
+    request('/api/login', { method: 'POST', body: { identifier: 'admin@servicios.co', password: 'admin12345' } }),
   ]);
   anaToken = ana.data.token;
   carlosToken = carlos.data.token;
   marcoToken = marco.data.token;
+  adminToken = admin.data.token;
 });
 
 after(async () => {
@@ -185,6 +188,17 @@ test('mensajes persisten y el remitente conserva control de edición y borrado',
   assert.equal(updated.data.message.text, 'Mensaje editado');
   const deleted = await request(`/api/messages/${id}`, { token: anaToken, method: 'DELETE' });
   assert.equal(deleted.status, 200);
+});
+
+
+test('el administrador recibe el padrón real completo y los usuarios normales no se listan a sí mismos', async () => {
+  const adminContacts = await request('/api/contacts', { token: adminToken });
+  assert.equal(adminContacts.status, 200);
+  assert.ok(adminContacts.data.contacts.some(user => user.id === 'a1'));
+  assert.equal(adminContacts.data.contacts.length, 11);
+  const clientContacts = await request('/api/contacts', { token: anaToken });
+  assert.equal(clientContacts.status, 200);
+  assert.equal(clientContacts.data.contacts.some(user => user.id === 'c1'), false);
 });
 
 test('la bandeja de conversaciones solo incluye usuarios con mensajes intercambiados', async () => {

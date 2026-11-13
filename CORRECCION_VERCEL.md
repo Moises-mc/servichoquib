@@ -43,7 +43,6 @@ Los 12 tests automatizados pasan; la comprobación de sintaxis revisa 52 archivo
 | `DB_POOL_MAX` | `1` |
 | `CLIENT_ORIGIN` | `https://moises-mc.github.io` si el frontend se sirve desde GitHub Pages; si todo está en Vercel, agrega los orígenes externos que realmente uses |
 | `JWT_SECRET` | secreto aleatorio propio de al menos 32 caracteres |
-| `SEED_DEMO_DATA` | `false` |
 
 No configures `DB_HOST=localhost` ni `DB_PASSWORD` en Vercel cuando uses `DATABASE_URL`. La cadena de Neon y el JWT deben guardarse únicamente en Environment Variables de Vercel.
 

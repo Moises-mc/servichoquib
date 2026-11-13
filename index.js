@@ -1,8 +1,6 @@
 import express from 'express';
 import { createApp } from './server/src/app.js';
-import { env } from './server/src/config/env.js';
 import { initializeDatabase } from './server/src/database/db.js';
-import { seedDemoData } from './server/src/store/seed.js';
 
 // Express se despliega como una Vercel Function. Los archivos del frontend
 // viven en /public y son entregados por la CDN de Vercel.
@@ -10,8 +8,9 @@ let initializationPromise;
 async function initializeOnce() {
   if (!initializationPromise) {
     initializationPromise = (async () => {
+      // En producción nunca se insertan cuentas, servicios ni reservas demo.
+      // Los datos del panel provienen exclusivamente de la base persistente.
       await initializeDatabase();
-      if (env.seedDemoData) await seedDemoData();
     })().catch(error => {
       initializationPromise = null;
       throw error;

@@ -51,7 +51,6 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   paymentsMode: process.env.PAYMENTS_MODE || 'sandbox',
-  seedDemoData: false,
   email: { resendApiKey: process.env.RESEND_API_KEY || '', from: process.env.RESEND_FROM_EMAIL || '' },
   sms: { accountSid: process.env.TWILIO_ACCOUNT_SID || '', authToken: process.env.TWILIO_AUTH_TOKEN || '', from: process.env.TWILIO_FROM_NUMBER || '' },
   db: {

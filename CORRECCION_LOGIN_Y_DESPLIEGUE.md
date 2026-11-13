@@ -19,7 +19,6 @@ Configurar para Production (y Preview si se desea probar previews):
 - `DB_SCHEMA=servi_choquib`
 - `DB_POOL_MAX=1`
 - `JWT_SECRET` = secreto aleatorio largo, propio y privado
-- `SEED_DEMO_DATA=false`
 
 No poner la URL de login en `CLIENT_ORIGIN`. CORS compara el origen `https://moises-mc.github.io`, no la URL completa de la página ni un endpoint.
 

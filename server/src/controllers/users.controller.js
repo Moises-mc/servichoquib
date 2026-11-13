@@ -3,7 +3,13 @@ import { ServiceModel } from '../models/service.model.js';
 import { HttpError } from '../utils/http-error.js';
 import { MessageModel } from '../models/message.model.js';
 export async function listContacts(req, res) {
-  const contacts = (await UserModel.findAll()).filter(user => String(user.id) !== String(req.user.id)).map(UserModel.toPublic);
+  const allUsers = await UserModel.findAll();
+  // El administrador necesita el padrón completo para su panel; los demás
+  // usuarios reciben solo los contactos ajenos a su propia cuenta.
+  const visibleUsers = req.user.role === 'admin'
+    ? allUsers
+    : allUsers.filter(user => String(user.id) !== String(req.user.id));
+  const contacts = visibleUsers.map(UserModel.toPublic);
   return res.json({ contacts });
 }
 export async function listConversations(req, res) {
