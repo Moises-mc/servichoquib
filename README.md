@@ -101,7 +101,3 @@ También se incluyen cuentas demo para Lucía, Jesús, Andrés, Fabio y Gloria, 
 - Configura `RESEND_API_KEY` y `RESEND_FROM_EMAIL` para correo; configura `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_FROM_NUMBER` para SMS. No guardes estas credenciales en el repositorio.
 - Las cuentas y datos demo ya no se generan. La migración `002_auth_security.sql` elimina únicamente los IDs y correos demo conocidos.
 - PayU no está integrado en esta versión. Completar un servicio no registra un pago; los ingresos solo se calculan cuando existe una confirmación de pago real.
-
-## Historial de cambios
-
-Las modificaciones y mejoras del proyecto están reunidas en un solo documento: [`CAMBIOS_SERVICHOQUIB.md`](CAMBIOS_SERVICHOQUIB.md). Las guías de despliegue y arquitectura se conservan por separado para no mezclar instrucciones operativas con el historial de cambios.

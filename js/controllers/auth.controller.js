@@ -33,7 +33,8 @@ function showLogin() {
 function openRecoveryForm() {
   document.getElementById('login-form').classList.add('hidden');
   document.getElementById('recover-form').classList.remove('hidden');
-  document.getElementById('recover-identifier').focus();
+  clearRecoveryMessages();
+  setRecoveryStep(1);
 }
 
 function showRecoveryMessage(message, isError = false) {
@@ -67,49 +68,123 @@ async function handleLogin(e) {
   }
 }
 
+function setRecoveryStep(step) {
+  const requestStep = document.getElementById('recover-step-request');
+  const verifyStep = document.getElementById('recover-step-verify');
+  requestStep?.classList.toggle('hidden', step !== 1);
+  verifyStep?.classList.toggle('hidden', step !== 2);
+  if (step === 2) document.getElementById('recover-code')?.focus();
+  else document.getElementById('recover-identifier')?.focus();
+}
+
+function clearRecoveryMessages() {
+  ['recover-error', 'recover-success', 'recover-error-step2', 'recover-success-step2'].forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = '';
+      element.classList.add('hidden');
+    }
+  });
+}
+
+function recoveryMessage(message, isError = false, step = 1) {
+  const id = isError
+    ? (step === 2 ? 'recover-error-step2' : 'recover-error')
+    : (step === 2 ? 'recover-success-step2' : 'recover-success');
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.textContent = message;
+  element.classList.remove('hidden');
+}
+
 async function requestPasswordCode() {
-  const identifier = document.getElementById('recover-identifier').value.trim();
+  const identifier = document.getElementById('recover-identifier').value.trim().toLowerCase();
+  const method = document.getElementById('recover-method')?.value || 'email';
+  const button = document.getElementById('recover-send-code');
+  clearRecoveryMessages();
+
   if (!identifier) {
-    showRecoveryMessage('Escribe tu correo o teléfono para recibir el código.', true);
+    recoveryMessage('Escribe el correo asociado a tu cuenta.', true);
+    return;
+  }
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(identifier)) {
+    recoveryMessage('Ingresa un correo electrónico válido.', true);
     return;
   }
 
+  button.disabled = true;
+  button.textContent = 'Enviando código…';
   try {
     const result = await apiRequest('/password/forgot', {
       method: 'POST',
-      body: JSON.stringify({ identifier, method: document.getElementById('recover-method').value })
+      body: JSON.stringify({ identifier, method })
     });
-    showRecoveryMessage(result.message || 'Se envió un código de recuperación a tu correo.', false);
+    // El backend usa una respuesta genérica para no revelar si el correo está registrado.
+    document.getElementById('recover-destination').textContent =
+      method === 'sms'
+        ? 'Si tu cuenta tiene un teléfono verificado, recibirás allí el código. Revisa también el correo si no tienes SMS habilitado.'
+        : `Si ${identifier} está asociado a una cuenta, recibirás allí el código. Revisa la bandeja de entrada y spam.`;
+    setRecoveryStep(2);
+    recoveryMessage(result.message || 'Solicitud procesada. Revisa tu correo.', false, 2);
   } catch (error) {
-    showRecoveryMessage(error.message, true);
+    recoveryMessage(error.message || 'No fue posible enviar el código. Inténtalo nuevamente.', true);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Enviar código';
   }
+}
+
+async function resendPasswordCode() {
+  setRecoveryStep(1);
+  await requestPasswordCode();
+}
+
+function backToRecoveryRequest() {
+  clearRecoveryMessages();
+  setRecoveryStep(1);
 }
 
 async function handlePasswordRecovery(e) {
   e.preventDefault();
-  const identifier = document.getElementById('recover-identifier').value.trim();
+  const identifier = document.getElementById('recover-identifier').value.trim().toLowerCase();
   const code = document.getElementById('recover-code').value.trim();
-  const newPassword = document.getElementById('recover-pass').value.trim();
-  showRecoveryMessage('', false);
+  const newPassword = document.getElementById('recover-pass').value;
+  const confirmation = document.getElementById('recover-pass-confirm').value;
+  const button = document.getElementById('recover-reset-button');
+  clearRecoveryMessages();
 
-  if (!identifier || !code || !newPassword) {
-    showRecoveryMessage('Completa correo, código y nueva contraseña.', true);
+  if (!/^\\d{6}$/.test(code)) {
+    recoveryMessage('Ingresa el código de 6 dígitos que recibiste.', true, 2);
+    return;
+  }
+  if (newPassword.length < 8) {
+    recoveryMessage('La contraseña debe tener al menos 8 caracteres.', true, 2);
+    return;
+  }
+  if (newPassword !== confirmation) {
+    recoveryMessage('Las contraseñas no coinciden.', true, 2);
     return;
   }
 
+  button.disabled = true;
+  button.textContent = 'Actualizando contraseña…';
   try {
     const result = await apiRequest('/password/reset', {
       method: 'POST',
       body: JSON.stringify({ identifier, code, new_password: newPassword })
     });
-    showRecoveryMessage(result.message || 'Contraseña actualizada correctamente.', false);
+    recoveryMessage(result.message || 'Contraseña actualizada correctamente.', false, 2);
     setTimeout(() => {
       document.getElementById('recover-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
-      document.getElementById('login-email').focus();
-    }, 1000);
+      document.getElementById('login-email').value = identifier;
+      document.getElementById('login-pass').focus();
+    }, 1200);
   } catch (error) {
-    showRecoveryMessage(error.message, true);
+    recoveryMessage(error.message || 'No fue posible cambiar la contraseña.', true, 2);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Restablecer contraseña';
   }
 }
 

@@ -221,24 +221,54 @@
         </form>
 
         <form id="recover-form" class="hidden" onsubmit="handlePasswordRecovery(event)">
-          <div class="form-group">
-            <label class="form-label">Correo o número telefónico</label>
-            <input class="input" id="recover-identifier" type="text" placeholder="correo@dominio.com o +57300..." />
+          <div id="recover-step-request">
+            <div class="form-group">
+              <label class="form-label">Correo de tu cuenta</label>
+              <input class="input" id="recover-identifier" type="email" autocomplete="email"
+                placeholder="tu@correo.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Recibir código por</label>
+              <select class="input" id="recover-method">
+                <option value="email">Correo electrónico</option>
+                <option value="sms">Mensaje de texto (SMS), si tu teléfono está verificado</option>
+              </select>
+            </div>
+            <p id="recover-error" style="color:#f87171;font-size:13px;margin-bottom:12px" class="hidden" role="alert"></p>
+            <p id="recover-success" style="color:#4ade80;font-size:13px;margin-bottom:12px" class="hidden" role="status"></p>
+            <button id="recover-send-code" type="button" class="btn-primary btn-full"
+              style="font-size:15px;padding:13px" onclick="requestPasswordCode()">Enviar código</button>
           </div>
-          <div class="form-group">
-            <label class="form-label">Código de verificación</label>
-            <input class="input" id="recover-code" type="text" placeholder="123456" maxlength="6" />
+
+          <div id="recover-step-verify" class="hidden">
+            <p id="recover-destination" class="form-hint" style="margin-bottom:16px">
+              Ingresa el código que enviamos a tu correo.
+            </p>
+            <div class="form-group">
+              <label class="form-label">Código de verificación</label>
+              <input class="input" id="recover-code" type="text" inputmode="numeric"
+                autocomplete="one-time-code" placeholder="Código de 6 dígitos" maxlength="6"
+                pattern="[0-9]{6}" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nueva contraseña</label>
+              <input class="input" id="recover-pass" type="password" autocomplete="new-password"
+                placeholder="Mínimo 8 caracteres" minlength="8" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirmar nueva contraseña</label>
+              <input class="input" id="recover-pass-confirm" type="password" autocomplete="new-password"
+                placeholder="Repite la nueva contraseña" minlength="8" required />
+            </div>
+            <p id="recover-error-step2" style="color:#f87171;font-size:13px;margin-bottom:12px" class="hidden" role="alert"></p>
+            <p id="recover-success-step2" style="color:#4ade80;font-size:13px;margin-bottom:12px" class="hidden" role="status"></p>
+            <button id="recover-reset-button" type="submit" class="btn-primary btn-full"
+              style="font-size:15px;padding:13px">Restablecer contraseña</button>
+            <button id="recover-resend-code" type="button" class="btn-outline btn-full"
+              style="margin-top:10px;padding:12px" onclick="resendPasswordCode()">Reenviar código</button>
+            <button type="button" class="btn-outline btn-full" style="margin-top:10px;padding:12px"
+              onclick="backToRecoveryRequest()">Cambiar correo o método</button>
           </div>
-          <div class="form-group">
-            <label class="form-label">Nueva contraseña</label>
-            <input class="input" id="recover-pass" type="password" placeholder="••••••••" />
-          </div>
-          <p id="recover-error" style="color:#f87171;font-size:13px;margin-bottom:12px" class="hidden"></p>
-          <p id="recover-success" style="color:#4ade80;font-size:13px;margin-bottom:12px" class="hidden"></p>
-          <button type="button" class="btn-outline btn-full" style="margin-bottom:10px;padding:12px"
-            onclick="requestPasswordCode()">Enviar código</button>
-          <button type="submit" class="btn-primary btn-full" style="font-size:15px;padding:13px">Restablecer
-            contraseña</button>
           <button type="button" class="btn-outline btn-full" style="margin-top:10px;padding:12px"
             onclick="showLogin()">Volver al inicio</button>
         </form>

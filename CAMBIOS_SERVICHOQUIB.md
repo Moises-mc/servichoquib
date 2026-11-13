@@ -343,3 +343,31 @@ La carga de imágenes de servicios utiliza el mismo mecanismo del perfil: el nav
 Nota técnica: Base64 aumenta el tamaño del archivo aproximadamente un 33%. Se limita a 1,2 MB para ajustarse al límite JSON de 2 MB configurado en Express. Las imágenes se almacenan en Neon, por lo que aumentan el tamaño y el consumo de la base de datos; conviene mantener el límite y evitar imágenes originales pesadas.
 
 ---
+
+
+## Recuperación de contraseña en dos pasos y envío por Gmail
+
+- El formulario se separó en dos pantallas: solicitar código y, después de una respuesta satisfactoria de la API, verificar el código y definir la nueva contraseña.
+- Se añadió confirmación de contraseña, validación del código de seis dígitos, botón para reenviar y opción para cambiar el correo o método.
+- El backend acepta configuración Gmail mediante `GMAIL_USER`, `GMAIL_APP_PASSWORD` y `EMAIL_FROM`, manteniendo Resend como alternativa si está configurado.
+- Los errores de configuración/envío clasificados como HTTP 503 ahora devuelven un mensaje operativo en lugar del genérico «Error interno del servidor».
+- Los códigos continúan almacenándose como hash, con vencimiento y límite de intentos ya implementados.
+- La entrega no confirma envío real desde Gmail: debe probarse en Vercel con las variables correctas y los permisos de la cuenta.
+
+
+## Recuperación de contraseña en dos pasos y compatibilidad con Gmail
+
+- El formulario de recuperación ahora comienza solicitando únicamente el correo y el método de entrega.
+- Solo después de que la API acepte la solicitud se muestra el segundo paso: código de seis dígitos, nueva contraseña y confirmación.
+- Se agregaron validaciones de formato del código, longitud de contraseña y coincidencia de contraseñas, además de opciones para reenviar el código o cambiar el correo.
+- El código anterior esperaba exclusivamente `RESEND_API_KEY` y `RESEND_FROM_EMAIL`. Como la configuración indicada por el usuario era Gmail (`GMAIL_USER`, `GMAIL_APP_PASSWORD` y `EMAIL_FROM`), esa diferencia explica el error de configuración de correo detectado en el código.
+- Se añadió envío SMTP seguro de Gmail con TLS por el puerto 465, sin instalar un proveedor externo. Resend sigue disponible como alternativa cuando ambas variables de Resend están configuradas.
+- Los errores operativos HTTP 503 de correo ahora muestran el motivo seguro y accionable; los errores internos inesperados siguen ocultándose al usuario.
+
+### Variables necesarias en Vercel para Gmail
+
+- `GMAIL_USER`: cuenta Gmail completa.
+- `GMAIL_APP_PASSWORD`: contraseña de aplicación de Google (no la contraseña normal de Gmail).
+- `EMAIL_FROM`: por ejemplo `Servi Choquib <cuenta@gmail.com>`, usando la misma cuenta autorizada en Gmail.
+
+La cuenta debe tener activada la verificación en dos pasos y una contraseña de aplicación válida. El envío real debe probarse después del despliegue, porque esta revisión local no puede validar las credenciales privadas ni la salida SMTP de la función de Vercel.
