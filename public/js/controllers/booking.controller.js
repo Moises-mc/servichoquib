@@ -4,7 +4,7 @@ function openServiceDetail(id) {
   const box = document.getElementById('modal-service-box');
   box.innerHTML = `
     <div style="height:200px;overflow:hidden;position:relative;border-radius:16px 16px 0 0;background:#111b54">
-      <img src="https://images.unsplash.com/${s.img}?w=560&h=220&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:100%;height:100%;object-fit:contain;opacity:0.95" />
+      <img src="${serviceImageUrl(s, '560x220')}" alt="${escapeHtml(s.title)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85" />
       <button onclick="closeModal('modal-service')" style="position:absolute;top:14px;right:14px;background:rgba(10,15,46,0.8);border:1px solid rgba(34,211,238,0.2);color:#e2e8f0;border-radius:8px;padding:6px 8px;cursor:pointer;display:flex">${icon('x')}</button>
       <div style="position:absolute;bottom:14px;left:14px">${badge(s.category)}</div>
     </div>

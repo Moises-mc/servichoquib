@@ -47,3 +47,15 @@ function findUserByName(name) {
     || null;
 }
 
+
+
+// Devuelve la imagen guardada del servicio; admite imágenes Base64 como la foto de perfil.
+function serviceImageUrl(service, size = '400x200') {
+  const image = String(service?.img || '');
+  if (safeImageUrl(image)) return safeImageUrl(image);
+  if (/^photo-[a-z0-9-]+$/i.test(image)) {
+    const [width, height] = size.split('x');
+    return `https://images.unsplash.com/${encodeURIComponent(image)}?w=${width}&h=${height}&fit=crop&auto=format`;
+  }
+  return '/assets/servi-choquib-icon.png';
+}

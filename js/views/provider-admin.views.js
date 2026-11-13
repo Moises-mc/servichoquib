@@ -1,8 +1,5 @@
 function dashboardServiceImage(service) {
-  const image = String(service?.img || '');
-  if (safeImageUrl(image)) return safeImageUrl(image);
-  if (/^photo-[a-z0-9-]+$/i.test(image)) return `https://images.unsplash.com/${encodeURIComponent(image)}?w=240&h=180&fit=crop&auto=format`;
-  return '/assets/servi-choquib-icon.png';
+  return serviceImageUrl(service, '240x180');
 }
 
 function renderProviderDash() {
@@ -28,9 +25,9 @@ function renderProviderDash() {
   const completedCount = providerBookings.filter(booking => booking.status === 'completado').length;
   const completionRate = providerBookings.length ? Math.round((completedCount / providerBookings.length) * 100) : null;
   const stats = [
-    [String(providerServices.filter(service => service.available).length), 'Servicios activos', '#22d3ee', 'brief'],
+    [String(providerServices.filter(service => service.available).length), 'Servicios activos', '#22d3ee', 'briefcase'],
     [String(requestsToday), 'Solicitudes hoy', '#818cf8', 'bell'],
-    [COP(incomeThisMonth), 'Ingresos pagados este mes', '#4ade80', 'trend'],
+    [COP(incomeThisMonth), 'Ingresos pagados este mes', '#4ade80', 'chart-line'],
     [reviewCount ? `${rating.toFixed(1)} ★` : 'Sin calificaciones', 'Calificación promedio', '#f59e0b', 'star'],
   ];
   const months = [];
