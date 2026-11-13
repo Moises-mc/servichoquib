@@ -111,9 +111,6 @@ export function createApp({ app: appInstance, enableSockets = true, enableLocalU
   }
 
   app.disable('x-powered-by');
-  // Vercel termina TLS y reenvía la IP original mediante X-Forwarded-For.
-  // Un proxy de confianza evita errores del rate limiter en producción.
-  app.set('trust proxy', 1);
   app.use(...security);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));

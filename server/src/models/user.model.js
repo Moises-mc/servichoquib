@@ -6,10 +6,10 @@ const FIELDS = new Map([
   ['name', 'name'], ['email', 'email'], ['phone', 'phone'], ['role', 'role'],
   ['passwordHash', 'password_hash'], ['avatar', 'avatar'], ['location', 'location'],
   ['rating', 'rating'], ['bio', 'bio'], ['specialty', 'specialty'],
-  ['availability', 'availability'], ['profile_image', 'profile_image'], ['emailVerified', 'email_verified'], ['phoneVerified', 'phone_verified'], ['isActive', 'is_active'],
+  ['availability', 'availability'], ['profile_image', 'profile_image'], ['emailVerified', 'email_verified'], ['phoneVerified', 'phone_verified'],
 ]);
 const SELECT = `id, name, email, phone, role, password_hash AS "passwordHash", avatar, location,
-  rating, bio, specialty, availability, profile_image, email_verified AS "emailVerified", phone_verified AS "phoneVerified", is_active AS "isActive", created_at, updated_at`;
+  rating, bio, specialty, availability, profile_image, email_verified AS "emailVerified", phone_verified AS "phoneVerified", created_at, updated_at`;
 
 function mapUser(row) {
   if (!row) return null;

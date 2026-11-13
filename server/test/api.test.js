@@ -168,9 +168,10 @@ test('reservas persisten, filtran usuarios y validan permisos', async () => {
   assert.equal(unauthorized.status, 403);
   const confirmed = await request(`/api/bookings/${bookingId}`, { token: marcoToken, method: 'PUT', body: { status: 'confirmado' } });
   assert.equal(confirmed.status, 200);
-  const completed = await request(`/api/bookings/${bookingId}`, { token: anaToken, method: 'PUT', body: { status: 'completado' } });
+  const completed = await request(`/api/bookings/${bookingId}`, { token: marcoToken, method: 'PUT', body: { status: 'completado' } });
   assert.equal(completed.status, 200);
-  assert.equal(completed.data.payment_amount, 45000);
+  assert.equal(completed.data.payment_amount, 0);
+  assert.equal(completed.data.paid, false);
 });
 
 test('mensajes persisten y el remitente conserva control de edición y borrado', async () => {
@@ -184,6 +185,16 @@ test('mensajes persisten y el remitente conserva control de edición y borrado',
   assert.equal(updated.data.message.text, 'Mensaje editado');
   const deleted = await request(`/api/messages/${id}`, { token: anaToken, method: 'DELETE' });
   assert.equal(deleted.status, 200);
+});
+
+test('la bandeja de conversaciones solo incluye usuarios con mensajes intercambiados', async () => {
+  const marcoEmpty = await request('/api/conversations', { token: marcoToken });
+  assert.equal(marcoEmpty.status, 200);
+  assert.deepEqual(marcoEmpty.data.contacts, []);
+  const anaConversations = await request('/api/conversations', { token: anaToken });
+  assert.equal(anaConversations.status, 200);
+  assert.ok(anaConversations.data.contacts.some(contact => contact.id === 'p1'));
+  assert.equal(anaConversations.data.contacts.some(contact => contact.id === 'p4'), false);
 });
 
 test('mensajería rechaza adjuntos con tipos o contenido no permitido', async () => {

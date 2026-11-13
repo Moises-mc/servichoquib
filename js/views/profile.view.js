@@ -11,7 +11,6 @@ function renderProfile() {
           <label class="form-label">Foto de perfil</label>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <input class="input" id="profile-image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-            ${safeImageUrl(STATE.user.profile_image) ? `<img src="${safeImageUrl(STATE.user.profile_image)}" alt="Foto de perfil" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid rgba(34,211,238,0.3)" />` : ''}
           </div>
         </div>
         <div class="form-group"><label class="form-label">Nombre completo</label><input class="input" id="profile-name" value="${escapeHtml(STATE.user.name || '')}" /></div>

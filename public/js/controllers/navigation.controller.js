@@ -19,7 +19,6 @@ const NAV_LINKS = {
     { id: 'users', label: 'Usuarios', icon: 'users' },
     { id: 'transactions', label: 'Transacciones', icon: 'bar' },
     { id: 'services-admin', label: 'Servicios', icon: 'grid' },
-    { id: 'bookings-admin', label: 'Contrataciones', icon: 'brief' },
     { id: 'profile', label: 'Mi perfil', icon: 'users' },
   ],
 };
@@ -60,8 +59,7 @@ function navigate(view) {
     profile: ['Mi perfil', 'Actualiza tu información personal'],
     users: ['Usuarios', 'Gestión de la comunidad'],
     transactions: ['Transacciones', 'Control financiero'],
-    'services-admin': ['Servicios', 'Moderación de publicaciones'],
-    'bookings-admin': ['Contrataciones', 'Seguimiento de solicitudes y trabajos'],
+    'services-admin': ['Servicios', 'Servicios publicados'],
   };
   const [t, s] = TITLES[view] || ['Panel', ''];
   document.getElementById('topbar-title').textContent = t;
@@ -113,7 +111,6 @@ function renderView(view) {
     users: renderAdminUsers,
     transactions: renderAdminTransactions,
     'services-admin': renderAdminServices,
-    'bookings-admin': renderAdminBookings,
   };
   const fn = renderers[view] || (role === 'admin' ? renderAdminDash : role === 'prestador' ? renderProviderDash : renderClientDash);
   el.innerHTML = `<div class="page fade-in">${fn()}</div>`;
@@ -125,7 +122,6 @@ function afterRender(view) {
   if (view === 'chat') setupChat();
   if (view === 'catalog') setupCatalog();
   if (view === 'requests') setupRequests();
-  if (STATE.user?.role === 'admin' && ['dashboard','users','transactions','services-admin','bookings-admin'].includes(view)) loadAdminData(view);
 }
 
 // ── CLIENT VIEWS ───────────────────────────────────────────────

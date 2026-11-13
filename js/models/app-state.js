@@ -26,5 +26,3 @@ const USERS_DATA = [];
 
 
 STATE.editingServiceId = null;
-
-const ADMIN_DATA = { loading: false, loaded: false, summary: {}, users: [], services: [], bookings: [] };

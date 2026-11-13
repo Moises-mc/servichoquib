@@ -28,7 +28,3 @@ Thumbs.db
 *.dump
 *.backup
 *.sql.gz
-**/.env
-**/.env.*
-!**/.env.example
-**/node_modules/

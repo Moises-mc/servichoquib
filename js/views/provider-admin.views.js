@@ -1,19 +1,43 @@
 function renderProviderDash() {
+  const providerServices = SERVICES.filter(service => String(service.ownerId) === String(STATE.user.id));
+  const providerBookings = STATE.bookings.filter(booking => String(booking.provider_id) === String(STATE.user.id));
+  const now = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+  const requestsToday = providerBookings.filter(booking => {
+    const created = Date.parse(booking.created_at || '');
+    return Number.isFinite(created) && created >= dayStart && created < dayEnd;
+  }).length;
+  const paidBookings = providerBookings.filter(booking => Number(booking.paid) === 1 && Number(booking.payment_amount) > 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const incomeThisMonth = paidBookings.filter(booking => {
+    const paidAt = Date.parse(booking.paid_at || booking.updated_at || booking.created_at || '');
+    return Number.isFinite(paidAt) && paidAt >= monthStart;
+  }).reduce((sum, booking) => sum + Number(booking.payment_amount || 0), 0);
+  const reviewCount = providerServices.reduce((sum, service) => sum + Number(service.reviews || 0), 0);
+  const rating = reviewCount
+    ? providerServices.reduce((sum, service) => sum + Number(service.rating || 0) * Number(service.reviews || 0), 0) / reviewCount
+    : 0;
+  const stats = [
+    [String(providerServices.filter(service => service.available).length), 'Servicios activos', '#22d3ee'],
+    [String(requestsToday), 'Solicitudes hoy', '#818cf8'],
+    [COP(incomeThisMonth), 'Ingresos pagados este mes', '#4ade80'],
+    [reviewCount ? `${rating.toFixed(1)} ★` : 'Sin calificaciones', 'Calificación', '#f59e0b'],
+  ];
   return `
     <h2 style="font-size:28px;font-weight:700;margin:0 0 4px">Panel de <span class="gradient-text">Prestador</span></h2>
     <p style="color:#64748b;margin:0 0 24px">Bienvenido, ${escapeHtml(STATE.user.name)}. Gestiona tus servicios aquí.</p>
-    <div class="grid-4" style="margin-bottom:28px">
-      ${[['3', 'Servicios activos', '#22d3ee'], ['7', 'Solicitudes hoy', '#818cf8'], ['$680k COP', 'Ingresos este mes', '#4ade80'], ['4.7 ★', 'Calificación', '#f59e0b']]
-      .map(([v, l, c]) => `<div class="stat-card"><p class="mono" style="font-size:22px;font-weight:700;color:${c};margin:0 0 4px">${v}</p><p style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#94a3b8;margin:0">${l}</p></div>`).join('')}
+    <div class="grid-4 provider-dashboard-stats" style="margin-bottom:28px">
+      ${stats.map(([value, label, color]) => `<div class="stat-card"><p class="mono" style="font-size:22px;font-weight:700;color:${color};margin:0 0 4px">${escapeHtml(value)}</p><p style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#94a3b8;margin:0">${escapeHtml(label)}</p></div>`).join('')}
     </div>
     <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px;color:#94a3b8">Mis servicios publicados</h3>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${SERVICES.slice(0, 3).map(s => `
-        <div class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:16px">
-          <img src="https://images.unsplash.com/${s.img}?w=80&h=80&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:60px;height:60px;border-radius:10px;object-fit:cover" loading="lazy" />
-          <div style="flex:1"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(s.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(s.category)} · ${COP(s.price)} ${escapeHtml(s.unit)}</p></div>
-          <div style="display:flex;gap:8px;align-items:center">${stars(s.rating)}<span style="font-size:12px;color:#64748b">${s.rating}</span>${badge(s.available ? 'Activo' : 'Inactivo', s.available ? 'green' : 'red')}</div>
-        </div>`).join('')}
+    <div class="provider-dashboard-services" style="display:flex;flex-direction:column;gap:10px">
+      ${providerServices.map(service => `
+        <div class="card provider-dashboard-service" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:16px">
+          <img src="${safeImageUrl(service.img) || (/^photo-[a-z0-9-]+$/i.test(String(service.img || '')) ? `https://images.unsplash.com/${encodeURIComponent(service.img)}?w=120&h=120&fit=crop&auto=format` : '/assets/servi-choquib-icon.png')}" alt="${escapeHtml(service.title)}" onerror="this.onerror=null;this.src='/assets/servi-choquib-icon.png'" style="width:60px;height:60px;border-radius:10px;object-fit:cover;background:#111b54" loading="lazy" />
+          <div style="flex:1;min-width:0"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(service.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(service.category)} · ${COP(service.price)} ${escapeHtml(service.unit)}</p></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${stars(service.rating)}<span style="font-size:12px;color:#64748b">${Number(service.reviews || 0)} reseñas</span>${badge(service.available ? 'Activo' : 'Inactivo', service.available ? 'green' : 'red')}</div>
+        </div>`).join('') || '<div class="card card-p provider-empty-state"><strong>Aún no has publicado servicios.</strong><p style="color:#94a3b8;margin:6px 0 14px">Cuando publiques tu primer servicio, aparecerá aquí.</p><button class="btn-primary" onclick="navigate(&quot;my-services&quot;)">Publicar mi primer servicio</button></div>'}
     </div>`;
 }
 
@@ -94,145 +118,90 @@ function renderIncome() {
 }
 
 // ── ADMIN VIEWS ─────────────────────────────────────────────────
-function adminMoney(value) {
-  return COP(Number(value || 0));
-}
-
-async function loadAdminData(view) {
-  if (ADMIN_DATA.loading) return;
-  ADMIN_DATA.loading = true;
-  try {
-    const data = await apiRequest('/admin/dashboard');
-    Object.assign(ADMIN_DATA, data, { loaded: true });
-    if (STATE.user?.role === 'admin' && STATE.activeView === view) {
-      const renderers = {
-        dashboard: renderAdminDash,
-        users: renderAdminUsers,
-        transactions: renderAdminTransactions,
-        'services-admin': renderAdminServices,
-        'bookings-admin': renderAdminBookings,
-      };
-      const content = document.getElementById('main-content');
-      if (content && renderers[view]) {
-        content.innerHTML = `<div class="page fade-in">${renderers[view]()}</div>`;
-        refreshIcons();
-      }
-    }
-  } catch (error) {
-    const content = document.getElementById('main-content');
-    if (content && STATE.activeView === view) {
-      content.innerHTML = `<div class="page"><div class="card card-p"><h3>No se pudo cargar el panel administrativo</h3><p style="color:#94a3b8">${escapeHtml(error.message)}</p><button class="btn-primary" onclick="loadAdminData('${view}')">Reintentar</button></div></div>`;
-    }
-  } finally {
-    ADMIN_DATA.loading = false;
-  }
-}
-
-async function adminSetUserStatus(id, isActive) {
-  try {
-    await apiRequest(`/admin/users/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH', body: JSON.stringify({ isActive }),
-    });
-    ADMIN_DATA.loaded = false;
-    await loadAdminData('users');
-  } catch (error) { alert(error.message); }
-}
-
-async function adminSetServiceStatus(id, available) {
-  try {
-    await apiRequest(`/admin/services/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH', body: JSON.stringify({ available }),
-    });
-    ADMIN_DATA.loaded = false;
-    await loadAdminData('services-admin');
-  } catch (error) { alert(error.message); }
-}
-
-function adminStat(value, label, note, iconName) {
-  return `<article class="stat-card" style="min-width:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><p class="mono" style="font-size:25px;font-weight:700;color:#22d3ee;margin:0 0 5px">${value}</p><p style="font-weight:600;color:#e2e8f0;margin:0">${label}</p><p style="font-size:12px;color:#64748b;margin:5px 0 0">${note}</p></div><span style="color:#22d3ee;opacity:.8">${icon(iconName)}</span></div></article>`;
-}
-
 function renderAdminDash() {
-  const d = ADMIN_DATA.summary || {};
+  const dist = [['Clientes', 174, '#818cf8'], ['Prestadores', 98, '#22d3ee'], ['Admins', 12, '#f59e0b']];
+  const cats = [['Oficios', 28], ['Técnico', 18], ['Belleza', 14], ['Transporte', 13], ['Otros', 20]];
   return `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:24px">
-      <div><h2 style="font-size:28px;font-weight:700;margin:0 0 4px">Centro de <span class="gradient-text">control</span></h2>
-      <p style="color:#64748b;margin:0">Indicadores calculados con la información registrada en Servi Choquib.</p></div>
-      <button class="btn-ghost" onclick="ADMIN_DATA.loaded=false;loadAdminData('dashboard')">Actualizar datos</button>
-    </div>
-    <div class="grid-4" style="margin-bottom:18px">
-      ${adminStat(d.users ?? '—','Usuarios registrados',`${d.clients ?? 0} clientes · ${d.providers ?? 0} prestadores`,'users')}
-      ${adminStat(d.activeServices ?? '—','Servicios activos',`${d.services ?? 0} publicaciones en total`,'grid')}
-      ${adminStat(d.bookings ?? '—','Contrataciones',`${d.pendingBookings ?? 0} pendientes · ${d.completedBookings ?? 0} finalizadas`,'briefcase')}
-      ${adminStat(adminMoney(d.commissionRevenue),'Comisiones verificadas',`${d.paidTransactions ?? 0} pagos registrados`,'wallet')}
+    <h2 style="font-size:28px;font-weight:700;margin:0 0 4px">Panel de <span class="gradient-text">Administrador</span></h2>
+    <p style="color:#64748b;margin:0 0 24px">Supervisión global de la plataforma Servi Choquib.</p>
+    <div class="grid-4" style="margin-bottom:28px">
+      ${[['284', 'Usuarios totales', '+12 esta semana', '#22d3ee'], ['93', 'Servicios activos', 'En plataforma', '#818cf8'], ['1,240', 'Transacciones', 'Este mes', '#4ade80'], ['$4.2M', 'Comisiones generadas', 'COP acumulado', '#f59e0b']]
+      .map(([v, l, s, c]) => `<div class="stat-card"><p class="mono" style="font-size:24px;font-weight:700;color:${c};margin:0 0 4px">${v}</p><p style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#e2e8f0;margin:0 0 2px">${l}</p><p style="font-size:12px;color:#64748b;margin:0">${s}</p></div>`).join('')}
     </div>
     <div class="grid-2">
-      <section class="card card-p"><h3 style="margin:0 0 16px;font-size:16px">Usuarios por tipo de cuenta</h3>
-        ${[['Clientes',d.clients,'#818cf8'],['Prestadores',d.providers,'#22d3ee'],['Administradores',d.admins,'#f59e0b']].map(([label,value,color])=>`<div style="margin:14px 0"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span>${label}</span><strong>${value ?? 0}</strong></div><div class="progress"><div class="progress-fill" style="width:${d.users ? Math.min(100,(Number(value||0)/d.users)*100) : 0}%;background:${color}"></div></div></div>`).join('')}
-      </section>
-      <section class="card card-p"><h3 style="margin:0 0 16px;font-size:16px">Estado de la operación</h3>
-        ${[['Solicitudes pendientes',d.pendingBookings],['Trabajos finalizados',d.completedBookings],['Pagos registrados',d.paidTransactions],['Cuentas activas',d.activeUsers]].map(([label,value])=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(148,163,184,.12)"><span style="color:#94a3b8">${label}</span><strong>${value ?? 0}</strong></div>`).join('')}
-      </section>
-    </div>
-    <p style="font-size:12px;color:#64748b;margin-top:16px">Los valores de pagos y comisiones solo incluyen transacciones marcadas como pagadas en la base de datos. PayU todavía no está integrado.</p>`;
+      <div class="card card-p" style="border-radius:14px">
+        <p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 14px;color:#94a3b8">Distribución por roles</p>
+        ${dist.map(([l, n, c]) => `<div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#e2e8f0">${l}</span><span class="mono" style="font-size:12px;color:${c}">${n}</span></div>
+          <div class="progress"><div class="progress-fill" style="width:${Math.round((n / 284) * 100)}%;background:${c}"></div></div>
+        </div>`).join('')}
+      </div>
+      <div class="card card-p" style="border-radius:14px">
+        <p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 14px;color:#94a3b8">Servicios por categoría</p>
+        ${cats.map(([c, n]) => `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;color:#e2e8f0">${c}</span><span class="mono" style="font-size:12px;color:#64748b">${n}</span></div>
+          <div class="progress"><div class="progress-fill" style="width:${Math.round((n / 28) * 100)}%"></div></div>
+        </div>`).join('')}
+      </div>
+    </div>`;
 }
 
 function renderAdminUsers() {
-  const users = ADMIN_DATA.users || [];
-  const rc = role => role === 'admin' ? 'amber' : role === 'prestador' ? 'cyan' : 'purple';
-  return `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
-    <div><h2 style="font-size:22px;margin:0 0 4px">Gestión de usuarios</h2><p style="color:#64748b;margin:0">${users.length} cuentas registradas</p></div>
-    <input class="input" style="max-width:280px" placeholder="Buscar por nombre o correo..." oninput="filterAdminUsers(this.value)" />
-  </div>
-  <div class="overflow-x"><table class="data-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Ubicación</th><th>Correo verificado</th><th>Estado</th><th>Acción</th></tr></thead>
-  <tbody id="admin-users-body">${users.map(adminUserRow).join('') || '<tr><td colspan="7">No hay usuarios registrados.</td></tr>'}</tbody></table></div>`;
-}
-
-function adminUserRow(user) {
-  const active = user.isActive !== false;
-  return `<tr data-admin-user="${escapeHtml(`${user.name} ${user.email}`.toLowerCase())}">
-    <td>${avatar(user.avatar,32,roleColor(user.role),user.profile_image)} <strong>${escapeHtml(user.name)}</strong></td>
-    <td>${escapeHtml(user.email)}</td><td>${badge(user.role, user.role==='admin'?'amber':user.role==='prestador'?'cyan':'purple')}</td>
-    <td>${escapeHtml(user.location || '—')}</td><td>${user.emailVerified ? badge('Verificado','green') : badge('Pendiente','amber')}</td>
-    <td>${badge(active?'Activo':'Suspendido',active?'green':'red')}</td>
-    <td>${user.role === 'admin' ? '<span style="color:#64748b">Protegido</span>' : `<button class="${active?'btn-danger':'btn-primary'} btn-sm" onclick="adminSetUserStatus('${escapeHtml(user.id)}',${!active})">${active?'Suspender':'Reactivar'}</button>`}</td>
-  </tr>`;
-}
-
-function filterAdminUsers(value) {
-  const query = String(value || '').toLowerCase().trim();
-  document.querySelectorAll('[data-admin-user]').forEach(row => {
-    row.style.display = row.dataset.adminUser.includes(query) ? '' : 'none';
-  });
+  const rc = r => r === 'admin' ? 'amber' : r === 'prestador' ? 'cyan' : 'purple';
+  return `
+    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px">Gestión de usuarios</h2>
+    <div class="overflow-x">
+      <table class="data-table">
+        <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Ubicación</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${USERS_DATA.map(u => `<tr>
+            <td><div style="display:flex;align-items:center;gap:10px">${avatar(u.avatar, 32, roleColor(u.role))}<span style="font-family:'Outfit',sans-serif;font-weight:500">${escapeHtml(u.name)}</span></div></td>
+            <td style="color:#64748b;font-size:13px">${escapeHtml(u.email)}</td>
+            <td>${badge(u.role, rc(u.role))}</td>
+            <td style="color:#64748b;font-size:13px">${escapeHtml(u.location || '—')}</td>
+            <td>${badge('Activo', 'green')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 function renderAdminTransactions() {
-  const paid = (ADMIN_DATA.bookings || []).filter(b => Number(b.paid) === 1 && Number(b.payment_amount) > 0);
-  const total = paid.reduce((sum,b)=>sum+Number(b.payment_amount||0),0);
-  const commission = paid.reduce((sum,b)=>sum+Number(b.commission||0),0);
-  return `<h2 style="font-size:22px;margin:0 0 4px">Control de transacciones</h2><p style="color:#64748b;margin:0 0 20px">Solo se muestran pagos registrados; no se simulan aprobaciones de pasarela.</p>
-    <div class="grid-3" style="margin-bottom:22px">${adminStat(paid.length,'Pagos registrados','Transacciones marcadas como pagadas','check-circle')}${adminStat(adminMoney(total),'Valor pagado','COP registrados','wallet')}${adminStat(adminMoney(commission),'Comisión registrada','COP acumulados','trending-up')}</div>
-    <div class="overflow-x"><table class="data-table"><thead><tr><th>Contratación</th><th>Servicio</th><th>Cliente</th><th>Prestador</th><th>Valor</th><th>Comisión</th><th>Fecha</th></tr></thead><tbody>
-    ${paid.map(b=>`<tr><td>${escapeHtml(b.id)}</td><td>${escapeHtml(b.title)}</td><td>${escapeHtml(b.client)}</td><td>${escapeHtml(b.provider)}</td><td>${adminMoney(b.payment_amount)}</td><td>${adminMoney(b.commission)}</td><td>${escapeHtml(b.paid_at || b.date || '—')}</td></tr>`).join('') || '<tr><td colspan="7">Todavía no hay pagos verificados.</td></tr>'}
-    </tbody></table></div>`;
+  return `
+    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px">Control de transacciones</h2>
+    <div class="grid-3" style="margin-bottom:24px">
+      ${[['$42.8M', 'Volumen total', '#22d3ee'], ['$4.28M', 'Comisiones retenidas', '#f59e0b'], ['1,198 / 1,240', 'Transacciones exitosas', '#4ade80']]
+      .map(([v, l, c]) => `<div class="stat-card"><p class="mono" style="font-size:18px;font-weight:700;color:${c};margin:0 0 4px">${v}</p><p style="font-family:'Outfit',sans-serif;font-size:13px;color:#94a3b8;margin:0">${l} COP</p></div>`).join('')}
+    </div>
+    <div class="overflow-x">
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Servicio</th><th>Cliente</th><th>Prestador</th><th>Monto</th><th>Comisión</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${STATE.bookings.map(b => `<tr>
+            <td class="mono" style="font-size:12px;color:#64748b">${escapeHtml(b.id).toUpperCase()}</td>
+            <td style="font-family:'Outfit',sans-serif;font-weight:500">${escapeHtml(b.title)}</td>
+            <td style="color:#94a3b8;font-size:13px">${escapeHtml(b.client)}</td>
+            <td style="color:#94a3b8;font-size:13px">${escapeHtml(b.provider)}</td>
+            <td class="mono" style="color:#22d3ee">${COP(b.total)}</td>
+            <td class="mono" style="color:#f59e0b">${COP(b.commission)}</td>
+            <td>${statusBadge(b.status)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 function renderAdminServices() {
-  const services = ADMIN_DATA.services || [];
-  return `<h2 style="font-size:22px;margin:0 0 4px">Moderación de servicios</h2><p style="color:#64748b;margin:0 0 20px">${services.length} publicaciones registradas. Puedes activar o desactivar su visibilidad.</p>
-    <div style="display:flex;flex-direction:column;gap:10px">${services.map(service=>`<article class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <div style="flex:1;min-width:220px"><strong>${escapeHtml(service.title)}</strong><p style="margin:5px 0;color:#94a3b8;font-size:13px">${escapeHtml(service.provider)} · ${escapeHtml(service.category)} · ${adminMoney(service.price)}</p><small style="color:#64748b">${escapeHtml(service.location || 'Sin ubicación')}</small></div>
-      ${badge(service.available?'Publicado':'Oculto',service.available?'green':'red')}
-      <button class="${service.available?'btn-danger':'btn-primary'} btn-sm" onclick="adminSetServiceStatus('${escapeHtml(service.id)}',${!service.available})">${service.available?'Desactivar':'Activar'}</button>
-    </article>`).join('') || '<div class="card card-p">No hay servicios publicados.</div>'}</div>`;
-}
-
-function renderAdminBookings() {
-  const bookings = ADMIN_DATA.bookings || [];
-  return `<h2 style="font-size:22px;margin:0 0 4px">Seguimiento de contrataciones</h2><p style="color:#64748b;margin:0 0 20px">Vista de supervisión; los estados operativos se modifican desde el flujo de cliente y prestador.</p>
-  <div class="overflow-x"><table class="data-table"><thead><tr><th>Servicio</th><th>Cliente</th><th>Prestador</th><th>Fecha</th><th>Valor</th><th>Estado</th><th>Pago</th></tr></thead><tbody>
-  ${bookings.map(b=>`<tr><td>${escapeHtml(b.title)}</td><td>${escapeHtml(b.client)}</td><td>${escapeHtml(b.provider)}</td><td>${escapeHtml(b.date)}</td><td>${adminMoney(b.total)}</td><td>${statusBadge(b.status)}</td><td>${Number(b.paid)===1?badge('Pagado','green'):badge('Sin pago','amber')}</td></tr>`).join('') || '<tr><td colspan="7">No hay contrataciones registradas.</td></tr>'}
-  </tbody></table></div>`;
+  return `
+    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px">Servicios publicados</h2>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${SERVICES.map(s => `
+        <div class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px">
+          <img src="https://images.unsplash.com/${s.img}?w=70&h=70&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:52px;height:52px;border-radius:8px;object-fit:cover" loading="lazy" />
+          <div style="flex:1"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(s.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(s.provider)} · ${escapeHtml(s.category)} · ${COP(s.price)}</p></div>
+          <div style="display:flex;gap:10px;align-items:center">${stars(s.rating)}${badge(s.available ? 'Activo' : 'Inactivo', s.available ? 'green' : 'red')}<button class="btn-danger" style="font-size:12px">Suspender</button></div>
+        </div>`).join('')}
+    </div>`;
 }
 
 // ── TERMS ──────────────────────────────────────────────────────

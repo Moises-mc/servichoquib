@@ -36,10 +36,16 @@ function handleChatAttachment(input) {
 }
 
 function filterChatContacts(query = '') {
-  const term = query.trim().toLowerCase();
+  const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const term = normalize(query);
+  let visible = 0;
   document.querySelectorAll('#chat-contact-list .chat-contact-row').forEach(row => {
-    row.hidden = term && !row.textContent.toLowerCase().includes(term);
+    const matches = !term || normalize(row.dataset.contactName).includes(term);
+    row.hidden = !matches;
+    if (matches) visible += 1;
   });
+  const empty = document.getElementById('chat-search-empty');
+  if (empty) empty.hidden = !term || visible > 0;
 }
 
 function setupChat() {
@@ -70,7 +76,7 @@ async function sendMsg() {
   if (!text && !STATE.chatAttachment) return;
   try {
     await apiRequest('/messages', { method: 'POST', body: JSON.stringify({ receiverId: STATE.chatPartnerId, text, attachment: STATE.chatAttachment }) });
-    addActiveChatContact();
+    await addActiveChatContact();
     if (inp) inp.value = '';
     STATE.chatAttachment = null;
     const attachmentInput = document.getElementById('chat-attachment-input');
@@ -84,11 +90,9 @@ async function sendMsg() {
   }
 }
 
-function addActiveChatContact() {
-  const contact = findUserById(STATE.chatPartnerId);
-  if (contact && !STATE.contacts.some(item => String(item.id) === String(contact.id))) {
-    STATE.contacts.push(contact);
-  }
+async function addActiveChatContact() {
+  const result = await apiRequest('/conversations');
+  STATE.contacts = result.contacts || [];
 }
 
 async function editMessage(messageId) {

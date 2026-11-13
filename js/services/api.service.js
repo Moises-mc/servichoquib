@@ -72,20 +72,21 @@ async function loadRemoteData() {
   const services = await apiRequest('/services');
   SERVICES = services.services;
   if (!STATE.user) return;
-  const [bookings, contacts, messages] = await Promise.all([
+  const [bookings, contacts, conversations] = await Promise.all([
     apiRequest('/bookings'),
     apiRequest('/contacts'),
-    apiRequest('/messages'),
+    apiRequest('/conversations'),
   ]);
   STATE.bookings = bookings.bookings;
+  // allContacts se conserva para abrir perfiles desde el catálogo; la bandeja de chat
+  // contiene exclusivamente personas con al menos un mensaje intercambiado.
   STATE.allContacts = contacts.contacts;
-  const recentContacts = getConversationContacts(STATE.allContacts, messages.messages);
-  const recentIds = new Set(recentContacts.map(contact => String(contact.id)));
-  // Incluye contactos sin conversación para permitir iniciar un chat nuevo desde la interfaz.
-  STATE.contacts = [...recentContacts, ...STATE.allContacts.filter(contact => !recentIds.has(String(contact.id)))];
-  if (!STATE.chatPartnerId || !STATE.contacts.some(contact => String(contact.id) === String(STATE.chatPartnerId))) {
-    STATE.chatPartnerId = STATE.contacts[0]?.id || null;
+  STATE.contacts = conversations.contacts;
+  if (STATE.chatPartnerId && !STATE.contacts.some(contact => String(contact.id) === String(STATE.chatPartnerId))) {
+    const hasConversation = STATE.contacts.some(contact => String(contact.id) === String(STATE.chatPartnerId));
+    if (!hasConversation) STATE.chatMessages = [];
   }
+  if (!STATE.chatPartnerId && STATE.contacts.length) STATE.chatPartnerId = STATE.contacts[0].id;
   await loadConversation();
 }
 

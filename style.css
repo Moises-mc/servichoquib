@@ -340,6 +340,26 @@
     }
 
 
+
+    /* Ajustes de presentación para estados vacíos y dashboard del prestador */
+    .chat-empty-state { margin:auto; max-width:420px; padding:22px; text-align:center; color:#94a3b8; line-height:1.65; border:1px dashed rgba(34,211,238,.2); border-radius:14px; background:rgba(17,27,84,.32); }
+    .provider-dashboard-stats .stat-card { min-width:0; }
+    .provider-dashboard-service { min-width:0; flex-wrap:wrap; border:1px solid rgba(34,211,238,.12); }
+    .provider-dashboard-service > img { flex:0 0 60px; }
+    .provider-dashboard-service > div:last-child { justify-content:flex-end; }
+    .provider-empty-state { border:1px dashed rgba(34,211,238,.22); background:rgba(17,27,84,.25); }
+    #chat-search-empty[hidden] { display:none !important; }
+    @media (max-width:600px) {
+      .provider-dashboard-stats { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+      .provider-dashboard-stats .stat-card { padding:14px; }
+      .provider-dashboard-stats .stat-card .mono { font-size:18px !important; overflow-wrap:anywhere; }
+      .provider-dashboard-service { align-items:flex-start !important; gap:10px !important; }
+      .provider-dashboard-service > div:first-of-type { flex:1 1 calc(100% - 72px) !important; }
+      .provider-dashboard-service > div:last-child { width:100%; justify-content:flex-start; padding-left:70px; }
+      .chat-header-actions { flex-wrap:wrap; padding:8px 12px; }
+      .chat-contact-row { min-width:0; }
+    }
+
     .chat-image { max-width:min(100%, 520px); width:auto; height:auto; max-height:70vh; object-fit:contain; }
     .chat-image-link { max-width:100%; overflow:hidden; }
 

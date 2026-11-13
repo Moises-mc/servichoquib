@@ -53,13 +53,3 @@ Configura en Vercel (Project Settings → Environment Variables):
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`: credenciales y número remitente de Twilio.
 
 El registro requiere correo configurado. El SMS de recuperación solo se envía a teléfonos que el usuario haya verificado desde su perfil. Los números deben ser colombianos o internacionales y se normalizan a E.164 cuando son números móviles colombianos de 10 dígitos.
-
-
-### Correo transaccional con Gmail SMTP
-
-Configura en Vercel (Production y Preview si corresponde):
-- `GMAIL_USER`: cuenta Gmail exclusiva de Servi Choquib.
-- `GMAIL_APP_PASSWORD`: contraseña de aplicación de Google (no la contraseña normal).
-- `EMAIL_FROM`: `Servi Choquib <cuenta@gmail.com>` usando la misma cuenta autorizada.
-
-No publiques la contraseña de aplicación ni la incluyas en el repositorio. Gmail es una opción inicial con límites de envío; para mayor volumen conviene un proveedor transaccional con dominio propio.

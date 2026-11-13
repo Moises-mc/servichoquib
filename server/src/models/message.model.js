@@ -8,6 +8,26 @@ export class MessageModel {
     const { rows } = await query(`SELECT ${SELECT} FROM ${MESSAGES} WHERE id = $1 LIMIT 1`, [String(id)]);
     return mapMessage(rows[0]);
   }
+  static async findConversationContacts(userId) {
+    const users = table('users');
+    const { rows } = await query(
+      `SELECT contact.id, contact.name, contact.email, contact.phone, contact.role, contact.avatar,
+              contact.location, contact.rating, contact.bio, contact.specialty, contact.availability,
+              contact.profile_image, contact.email_verified AS "emailVerified", contact.phone_verified AS "phoneVerified",
+              latest.last_message_at AS "lastMessageAt"
+       FROM (
+         SELECT CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END AS contact_id,
+                MAX(created_at) AS last_message_at
+         FROM ${MESSAGES}
+         WHERE sender_id = $1 OR receiver_id = $1
+         GROUP BY CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END
+       ) latest
+       JOIN ${users} contact ON contact.id = latest.contact_id
+       ORDER BY latest.last_message_at DESC`,
+      [String(userId)],
+    );
+    return rows;
+  }
   static async findForUser(userId, partnerId = '') {
     const params = [String(userId)];
     let where = '(sender_id = $1 OR receiver_id = $1)';

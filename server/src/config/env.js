@@ -52,15 +52,7 @@ export const env = {
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   paymentsMode: process.env.PAYMENTS_MODE || 'sandbox',
   seedDemoData: false,
-  adminBootstrap: {
-    email: String(process.env.ADMIN_BOOTSTRAP_EMAIL || 'admin@servicios.co').trim().toLowerCase(),
-    password: process.env.ADMIN_BOOTSTRAP_PASSWORD || '',
-  },
-  email: {
-    user: process.env.GMAIL_USER || '',
-    appPassword: process.env.GMAIL_APP_PASSWORD || '',
-    from: process.env.EMAIL_FROM || '',
-  },
+  email: { resendApiKey: process.env.RESEND_API_KEY || '', from: process.env.RESEND_FROM_EMAIL || '' },
   sms: { accountSid: process.env.TWILIO_ACCOUNT_SID || '', authToken: process.env.TWILIO_AUTH_TOKEN || '', from: process.env.TWILIO_FROM_NUMBER || '' },
   db: {
     connectionString: String(process.env.DATABASE_URL || '').trim(),
