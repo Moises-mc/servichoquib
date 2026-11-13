@@ -10,7 +10,7 @@ function renderProviderDash() {
     <div style="display:flex;flex-direction:column;gap:10px">
       ${SERVICES.slice(0, 3).map(s => `
         <div class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:16px">
-          <img src="https://images.unsplash.com/${s.img}?w=80&h=80&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:60px;height:60px;border-radius:10px;object-fit:contain" loading="lazy" />
+          <img src="https://images.unsplash.com/${s.img}?w=80&h=80&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:60px;height:60px;border-radius:10px;object-fit:cover" loading="lazy" />
           <div style="flex:1"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(s.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(s.category)} · ${COP(s.price)} ${escapeHtml(s.unit)}</p></div>
           <div style="display:flex;gap:8px;align-items:center">${stars(s.rating)}<span style="font-size:12px;color:#64748b">${s.rating}</span>${badge(s.available ? 'Activo' : 'Inactivo', s.available ? 'green' : 'red')}</div>
         </div>`).join('')}
@@ -57,8 +57,8 @@ function updateBooking(id, status) {
 async function changeBookingStatus(id, status) {
   try {
     const result = await apiRequest(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
-    if (status === 'completado' && result.payment_amount) {
-      alert(`Servicio finalizado. Se realizó el pago de ${COP(result.payment_amount)} al prestador.`);
+    if (status === 'completado') {
+      alert('Servicio finalizado. El pago aún no está habilitado; se activará cuando se integre PayU.');
     }
     await loadRemoteData();
     navigate(STATE.user.role === 'prestador' ? 'requests' : 'history');
@@ -69,8 +69,8 @@ async function changeBookingStatus(id, status) {
 
 function renderIncome() {
   const providerBookings = STATE.bookings.filter(booking => booking.provider_id === STATE.user.id || booking.provider === STATE.user.name);
-  const completedPayments = providerBookings.filter(booking => booking.status === 'completado' || booking.paid === 1 || booking.payment_amount > 0);
-  const totalReceived = completedPayments.reduce((sum, booking) => sum + Number(booking.payment_amount || (booking.total - booking.commission) || 0), 0);
+  const completedPayments = providerBookings.filter(booking => booking.paid === 1 && Number(booking.payment_amount) > 0);
+  const totalReceived = completedPayments.reduce((sum, booking) => sum + Number(booking.payment_amount || 0), 0);
   const platformCommission = completedPayments.reduce((sum, booking) => sum + Number(booking.commission || 0), 0);
   const months = ['Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'];
   const values = [Math.max(0, totalReceived * 0.6), Math.max(0, totalReceived * 0.75), Math.max(0, totalReceived * 0.5), Math.max(0, totalReceived * 0.9), Math.max(0, totalReceived * 0.88), Math.max(0, totalReceived * 1.05)];
@@ -173,7 +173,7 @@ function renderAdminServices() {
     <div style="display:flex;flex-direction:column;gap:10px">
       ${SERVICES.map(s => `
         <div class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px">
-          <img src="https://images.unsplash.com/${s.img}?w=70&h=70&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:52px;height:52px;border-radius:8px;object-fit:contain" loading="lazy" />
+          <img src="https://images.unsplash.com/${s.img}?w=70&h=70&fit=crop&auto=format" alt="${escapeHtml(s.title)}" style="width:52px;height:52px;border-radius:8px;object-fit:cover" loading="lazy" />
           <div style="flex:1"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(s.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(s.provider)} · ${escapeHtml(s.category)} · ${COP(s.price)}</p></div>
           <div style="display:flex;gap:10px;align-items:center">${stars(s.rating)}${badge(s.available ? 'Activo' : 'Inactivo', s.available ? 'green' : 'red')}<button class="btn-danger" style="font-size:12px">Suspender</button></div>
         </div>`).join('')}

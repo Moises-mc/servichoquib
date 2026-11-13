@@ -42,3 +42,14 @@ window.SERVI_API_URL = 'https://TU-DOMINIO-API/api';
 ```
 
 Publica el cambio en el repositorio que alimenta GitHub Pages. No uses `http://moises-mc.github.io:8000/api`.
+
+
+### Variables para verificación y recuperación
+
+Configura en Vercel (Project Settings → Environment Variables):
+
+- `RESEND_API_KEY`: clave API de Resend.
+- `RESEND_FROM_EMAIL`: remitente verificado en Resend, por ejemplo `Servi Choquib <no-reply@tudominio.com>`.
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`: credenciales y número remitente de Twilio.
+
+El registro requiere correo configurado. El SMS de recuperación solo se envía a teléfonos que el usuario haya verificado desde su perfil. Los números deben ser colombianos o internacionales y se normalizan a E.164 cuando son números móviles colombianos de 10 dígitos.

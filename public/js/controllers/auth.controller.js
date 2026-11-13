@@ -59,15 +59,9 @@ async function handleLogin(e) {
   try {
     const data = await apiRequest('/login', { method: 'POST', body: JSON.stringify({ identifier, password: pass }) });
     loginUser(data.user, data.token);
-    return;
   } catch (error) {
-    const fallbackUser = getDemoUser(identifier, pass);
-    if (fallbackUser) {
-      loginUser(fallbackUser, 'demo-token');
-      return;
-    }
     const message = error.message === 'Failed to fetch'
-      ? 'No hay servidor activo. Ejecuta start-backend.ps1 o inicia el backend con npm start dentro de la carpeta server.'
+      ? 'No hay conexión con el servidor. Verifica que el backend esté activo.'
       : error.message;
     showError(message, 'login-error');
   }
@@ -83,7 +77,7 @@ async function requestPasswordCode() {
   try {
     const result = await apiRequest('/password/forgot', {
       method: 'POST',
-      body: JSON.stringify({ identifier })
+      body: JSON.stringify({ identifier, method: document.getElementById('recover-method').value })
     });
     showRecoveryMessage(result.message || 'Se envió un código de recuperación a tu correo.', false);
   } catch (error) {
@@ -132,10 +126,23 @@ async function handleRegister(e) {
   if (!accepted) { err.textContent = 'Debes aceptar los términos y condiciones.'; err.classList.remove('hidden'); return; }
   try {
     const data = await apiRequest('/register', { method: 'POST', body: JSON.stringify({ name, email, phone, password: pass, role: STATE.selectedRole }) });
-    loginUser(data.user, data.token, true);
+    document.getElementById('verify-email').value = email;
+    document.getElementById('register-code-step').classList.remove('hidden');
+    showError(data.message || 'Te enviamos un código a tu correo.', 'reg-error');
   } catch (error) {
     showError(error.message, 'reg-error');
   }
+}
+
+
+async function handleEmailVerification(e) {
+  e.preventDefault();
+  const email = document.getElementById('verify-email').value.trim();
+  const code = document.getElementById('verify-code').value.trim();
+  try {
+    const data = await apiRequest('/register/verify', { method: 'POST', body: JSON.stringify({ email, code }) });
+    loginUser(data.user, data.token, true);
+  } catch (error) { showError(error.message, 'verify-error'); }
 }
 
 async function loginUser(user, token, completeProfile = false) {
@@ -161,9 +168,3 @@ function logout() {
 }
 
 // ── Sidebar ────────────────────────────────────────────────────
-
-
-// Exponer explícitamente las acciones usadas por los atributos onclick del HTML.
-window.showLogin = showLogin;
-window.switchAuthTab = switchAuthTab;
-window.selectRole = selectRole;

@@ -57,8 +57,8 @@ function updateBooking(id, status) {
 async function changeBookingStatus(id, status) {
   try {
     const result = await apiRequest(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
-    if (status === 'completado' && result.payment_amount) {
-      alert(`Servicio finalizado. Se realizó el pago de ${COP(result.payment_amount)} al prestador.`);
+    if (status === 'completado') {
+      alert('Servicio finalizado. El pago aún no está habilitado; se activará cuando se integre PayU.');
     }
     await loadRemoteData();
     navigate(STATE.user.role === 'prestador' ? 'requests' : 'history');
@@ -69,8 +69,8 @@ async function changeBookingStatus(id, status) {
 
 function renderIncome() {
   const providerBookings = STATE.bookings.filter(booking => booking.provider_id === STATE.user.id || booking.provider === STATE.user.name);
-  const completedPayments = providerBookings.filter(booking => booking.status === 'completado' || booking.paid === 1 || booking.payment_amount > 0);
-  const totalReceived = completedPayments.reduce((sum, booking) => sum + Number(booking.payment_amount || (booking.total - booking.commission) || 0), 0);
+  const completedPayments = providerBookings.filter(booking => booking.paid === 1 && Number(booking.payment_amount) > 0);
+  const totalReceived = completedPayments.reduce((sum, booking) => sum + Number(booking.payment_amount || 0), 0);
   const platformCommission = completedPayments.reduce((sum, booking) => sum + Number(booking.commission || 0), 0);
   const months = ['Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'];
   const values = [Math.max(0, totalReceived * 0.6), Math.max(0, totalReceived * 0.75), Math.max(0, totalReceived * 0.5), Math.max(0, totalReceived * 0.9), Math.max(0, totalReceived * 0.88), Math.max(0, totalReceived * 1.05)];

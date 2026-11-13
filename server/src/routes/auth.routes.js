@@ -21,8 +21,10 @@ router.post('/register', authLimiter, [
   body('role').optional().isIn(['cliente', 'prestador']).withMessage('Rol no válido.'),
   validateRequest,
 ], asyncHandler(controller.register));
+router.post('/register/verify', authLimiter, [body('email').trim().isEmail(), body('code').trim().matches(/^\d{6}$/), validateRequest], asyncHandler(controller.verifyRegistration));
 router.post('/password/forgot', authLimiter, [
   body('identifier').trim().isEmail().withMessage('Correo inválido.'),
+  body('method').optional().isIn(['email','sms']),
   validateRequest,
 ], asyncHandler(controller.requestPasswordReset));
 router.post('/password/reset', authLimiter, [
@@ -31,6 +33,8 @@ router.post('/password/reset', authLimiter, [
   body('new_password').isLength({ min: 8, max: 128 }).withMessage('La nueva contraseña debe tener al menos 8 caracteres.'),
   validateRequest,
 ], asyncHandler(controller.resetPassword));
+router.post('/phone/verify/request', auth, asyncHandler(controller.requestPhoneVerification));
+router.post('/phone/verify', auth, [body('code').trim().matches(/^\d{6}$/), validateRequest], asyncHandler(controller.verifyPhone));
 router.get('/me', auth, controller.getCurrentUser);
 router.get('/profile', auth, controller.getCurrentUser);
 router.put('/profile', auth, asyncHandler(controller.updateProfile));

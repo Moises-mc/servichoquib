@@ -34,18 +34,14 @@ export async function updateBooking(req, res) {
   const nextStatus = req.body.status;
   const isAllowed = isAdmin || ((isProvider && ALLOWED_TRANSITIONS[booking.status]?.has(nextStatus)) ||
     (isClient && nextStatus === 'cancelado' && ['pendiente', 'confirmado'].includes(booking.status)) ||
-    (isClient && nextStatus === 'completado' && booking.status === 'confirmado'));
+    false);
   if (!isAllowed) throw new HttpError(403, 'No puedes realizar ese cambio de estado.');
   const changes = { status: nextStatus };
-  if (nextStatus === 'completado') {
-    changes.paid = 1;
-    changes.payment_amount = Math.max(0, Number(booking.total) - Number(booking.commission));
-    changes.paid_at = new Date().toISOString();
-  } else if (nextStatus === 'cancelado') {
+  if (nextStatus === 'cancelado') {
     changes.paid = 0;
     changes.payment_amount = 0;
     changes.paid_at = null;
   }
   const updated = await BookingModel.update(booking, changes);
-  return res.json({ ok: true, payment_amount: updated.payment_amount || 0, paid: Boolean(updated.paid) });
+  return res.json({ ok: true, payment_amount: updated.payment_amount || 0, paid: Boolean(updated.paid), message: nextStatus === 'completado' ? 'Servicio finalizado. El pago aún no está habilitado.' : undefined });
 }

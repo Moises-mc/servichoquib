@@ -55,3 +55,17 @@ async function restoreSession() {
 }
 
 restoreSession();
+
+
+async function requestProfilePhoneCode() {
+  const phone = document.getElementById('profile-phone').value.trim();
+  if (phone !== String(STATE.user.phone || '')) { showError('Guarda primero el número telefónico y luego solicita el código.', 'profile-error'); return; }
+  try { const result = await apiRequest('/phone/verify/request', { method: 'POST' }); const el=document.getElementById('phone-verify-message'); el.textContent=result.message; el.classList.remove('hidden'); el.style.color='#4ade80'; }
+  catch(error) { showError(error.message, 'profile-error'); }
+}
+
+async function confirmProfilePhoneCode() {
+  const code = document.getElementById('profile-phone-code').value.trim();
+  try { const result=await apiRequest('/phone/verify', { method:'POST', body:JSON.stringify({code}) }); STATE.user=result.user; navigate('profile'); }
+  catch(error) { showError(error.message, 'profile-error'); }
+}

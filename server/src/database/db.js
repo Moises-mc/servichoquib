@@ -46,9 +46,14 @@ export async function initializeDatabase() {
   await activePool.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
   const { readFile } = await import('node:fs/promises');
   const { fileURLToPath } = await import('node:url');
-  const migrationPath = fileURLToPath(new URL('./migrations/001_initial.sql', import.meta.url));
-  const migration = (await readFile(migrationPath, 'utf8')).replaceAll('{{schema}}', schema);
-  await activePool.query(migration);
+  const migrationsDir = fileURLToPath(new URL('./migrations/', import.meta.url));
+  const { readdir } = await import('node:fs/promises');
+  const migrationFiles = (await readdir(migrationsDir)).filter(name => /^\d+_.*\.sql$/.test(name)).sort();
+  for (const filename of migrationFiles) {
+    const migrationPath = fileURLToPath(new URL(`./migrations/${filename}`, import.meta.url));
+    const migration = (await readFile(migrationPath, 'utf8')).replaceAll('{{schema}}', schema);
+    await activePool.query(migration);
+  }
   return true;
 }
 

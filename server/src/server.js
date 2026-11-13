@@ -3,11 +3,9 @@ import path from 'node:path';
 import { env } from './config/env.js';
 import { createApp } from './app.js';
 import { initializeDatabase, closeDatabase } from './database/db.js';
-import { seedDemoData } from './store/seed.js';
 
 export async function startServer({ port = env.port } = {}) {
   await initializeDatabase();
-  if (env.seedDemoData) await seedDemoData();
   const server = createApp();
   await new Promise((resolve, reject) => {
     server.httpServer.once('error', reject);

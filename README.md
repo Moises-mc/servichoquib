@@ -91,3 +91,13 @@ También se incluyen cuentas demo para Lucía, Jesús, Andrés, Fabio y Gloria, 
 - La recuperación de contraseña solo genera códigos en consola para desarrollo; para producción hay que integrar un proveedor de correo.
 - Los pagos permanecen en modo sandbox; no se procesa dinero real.
 - Los archivos se guardan en `server/uploads`; para producción conviene almacenamiento de objetos y análisis de archivos.
+
+
+## Seguridad de cuentas y notificaciones
+
+- El registro crea una cuenta pendiente y solo la activa después de validar el código enviado por correo.
+- Los códigos vencen a los 10 minutos y permiten máximo 5 intentos.
+- La recuperación se solicita usando el correo de la cuenta y permite escoger correo o SMS. El SMS exige un teléfono verificado desde el perfil.
+- Configura `RESEND_API_KEY` y `RESEND_FROM_EMAIL` para correo; configura `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_FROM_NUMBER` para SMS. No guardes estas credenciales en el repositorio.
+- Las cuentas y datos demo ya no se generan. La migración `002_auth_security.sql` elimina únicamente los IDs y correos demo conocidos.
+- PayU no está integrado en esta versión. Completar un servicio no registra un pago; los ingresos solo se calculan cuando existe una confirmación de pago real.
