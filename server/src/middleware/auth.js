@@ -13,6 +13,7 @@ export function auth(req, res, next) {
   }
   UserModel.findById(payload.id).then(user => {
     if (!user) return res.status(401).json({ error: 'Sesión no válida o vencida.' });
+    if (user.isActive === false) return res.status(403).json({ error: 'Tu cuenta está suspendida. Comunícate con soporte.' });
     req.auth = payload;
     req.user = user;
     return next();

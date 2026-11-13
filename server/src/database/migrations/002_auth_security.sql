@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS {{schema}}."phone_verifications" (
 );
 
 -- Limpieza limitada a los identificadores/correos de demostración conocidos.
-DELETE FROM {{schema}}."reviews" WHERE booking_id IN ('b1','b2','b3') OR provider_id IN ('p1','p2','p3','p4','p5','p6','p7','p8','a1') OR user_id IN ('c1','c2');
-DELETE FROM {{schema}}."messages" WHERE sender_id IN ('c1','c2','p1','p2','p3','p4','p5','p6','p7','p8','a1') OR receiver_id IN ('c1','c2','p1','p2','p3','p4','p5','p6','p7','p8','a1');
-DELETE FROM {{schema}}."bookings" WHERE id IN ('b1','b2','b3') OR client_id IN ('c1','c2') OR provider_id IN ('p1','p2','p3','p4','p5','p6','p7','p8','a1');
+DELETE FROM {{schema}}."reviews" WHERE booking_id IN ('b1','b2','b3') OR provider_id IN ('p1','p2','p3','p4','p5','p6','p7','p8') OR user_id IN ('c1','c2');
+DELETE FROM {{schema}}."messages" WHERE sender_id IN ('c1','c2','p1','p2','p3','p4','p5','p6','p7','p8') OR receiver_id IN ('c1','c2','p1','p2','p3','p4','p5','p6','p7','p8');
+DELETE FROM {{schema}}."bookings" WHERE id IN ('b1','b2','b3') OR client_id IN ('c1','c2') OR provider_id IN ('p1','p2','p3','p4','p5','p6','p7','p8');
 DELETE FROM {{schema}}."services" WHERE id IN ('s1','s2','s3','s4','s5','s6','s7','s8') OR owner_id IN ('p1','p2','p3','p4','p5','p6','p7','p8');
-DELETE FROM {{schema}}."users" WHERE id IN ('c1','c2','p1','p2','p3','p4','p5','p6','p7','p8','a1') OR email IN ('ana@email.com','pedro@email.com','carlos@email.com','lucia@email.com','jesus@email.com','marco@email.com','andres@email.com','sandra@email.com','fabio@email.com','gloria@email.com','admin@servicios.co');
+DELETE FROM {{schema}}."users" WHERE id IN ('c1','c2','p1','p2','p3','p4','p5','p6','p7','p8') OR email IN ('ana@email.com','pedro@email.com','carlos@email.com','lucia@email.com','jesus@email.com','marco@email.com','andres@email.com','sandra@email.com','fabio@email.com','gloria@email.com');
