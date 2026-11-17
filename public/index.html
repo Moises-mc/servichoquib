@@ -183,6 +183,7 @@
         <p>Publica tu servicio y llega a nuevos clientes en tu comunidad.</p>
       </article>
     </section>
+    <div id="landing-footer"></div>
   </main>
 
   <!-- ─── AUTH SCREEN ──────────────────────────────────────────── -->
@@ -381,6 +382,19 @@
     </div>
   </div>
 
+  <div id="modal-legal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="legal-title">
+    <div class="modal-box" style="max-width:540px">
+      <div class="modal-body">
+        <div class="modal-header">
+          <h2 id="legal-title" style="font-size:20px;font-weight:700"></h2>
+          <button class="btn-outline btn-sm" aria-label="Cerrar" onclick="closeModal('modal-legal')"><svg width="16" height="16"><use href="#ic-x" /></svg></button>
+        </div>
+        <div id="legal-content"></div>
+        <button class="btn-primary btn-full" style="margin-top:16px;padding:12px" onclick="closeModal('modal-legal')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-service" class="modal-overlay hidden">
     <div class="modal-box" style="max-width:550px" id="modal-service-box"></div>
   </div>
@@ -460,6 +474,7 @@
   <script src="js/controllers/chat.controller.js"></script>
   <script src="js/controllers/booking.controller.js"></script>
   <script src="js/views/provider-admin.views.js"></script>
+  <script src="js/views/footer.views.js"></script>
   <script src="js/views/provider-services.view.js"></script>
   <script src="js/views/profile.view.js"></script>
   <script src="js/controllers/ui.controller.js"></script>

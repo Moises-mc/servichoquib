@@ -116,7 +116,7 @@ function renderView(view) {
     'services-admin': renderAdminServices,
   };
   const fn = renderers[view] || (role === 'admin' ? renderAdminDash : role === 'prestador' ? renderProviderDash : renderClientDash);
-  el.innerHTML = `<div class="page fade-in">${fn()}</div>`;
+  el.innerHTML = `<div class="page fade-in">${fn()}</div>${siteFooterHtml('app')}`;
   refreshIcons();
   afterRender(view);
 }
