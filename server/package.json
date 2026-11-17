@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "test": "node ../scripts/test.js",
     "check": "node scripts/check.js",
-    "db:check": "node scripts/db-check.js"
+    "db:check": "node scripts/db-check.js",
+    "admin:set": "node scripts/set-admin.js"
   },
   "dependencies": {
     "axios": "^1.7.0",

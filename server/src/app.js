@@ -78,6 +78,9 @@ function configureSockets(io) {
 
 export function createApp({ app: appInstance, enableSockets = true, enableLocalUploads = true, beforeRoutes } = {}) {
   const app = appInstance || express();
+  // Detrás del proxy de Vercel hay 1 salto: así req.ip es la IP real del visitante y el
+  // límite de intentos (express-rate-limit) es por persona, no compartido entre todos.
+  if (process.env.VERCEL || env.nodeEnv === 'production') app.set('trust proxy', 1);
   const httpServer = http.createServer(app);
   const io = enableSockets ? new Server(httpServer, {
     cors: { origin: env.clientOrigins, credentials: true },
