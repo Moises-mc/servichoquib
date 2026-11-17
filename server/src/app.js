@@ -29,11 +29,10 @@ function configureSockets(io) {
     const bearerToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
     const token = socket.handshake.auth?.token || bearerToken;
     if (!token) return next(new Error('Autenticación requerida.'));
-
     try {
       const payload = jwt.verify(token, env.jwtSecret);
       UserModel.findById(payload.id).then(user => {
-        if (!user) return next(new Error('Sesión no válida.'));
+        if (!user || user.isActive === false) return next(new Error('Sesión no válida.'));
         socket.user = user;
         return next();
       }).catch(() => next(new Error('No se pudo validar la sesión.')));
@@ -112,7 +111,8 @@ export function createApp({ app: appInstance, enableSockets = true, enableLocalU
 
   app.disable('x-powered-by');
   app.use(...security);
-  app.use(express.json({ limit: '2mb' }));
+  // rawBody se conserva para validar la firma HMAC del webhook de Rapyd.
+  app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 
   // Vercel enruta las solicitudes al handler Express. Servimos el frontend

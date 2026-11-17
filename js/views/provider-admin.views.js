@@ -175,107 +175,172 @@ function renderIncome() {
 }
 
 // ── ADMIN VIEWS ─────────────────────────────────────────────────
+// Datos reales de /api/admin/dashboard (STATE.admin); se refrescan tras cada acción.
+const adminData = () => STATE.admin || { summary: {}, users: [], services: [], bookings: [] };
+const isPaidBooking = booking => Number(booking.paid) === 1 && Number(booking.payment_amount) > 0;
+const adminStat = (value, label, color) => `<div class="stat-card"><p class="mono" style="font-size:22px;font-weight:700;color:${color};margin:0 0 4px">${escapeHtml(value)}</p><p style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#e2e8f0;margin:0">${escapeHtml(label)}</p></div>`;
+const adminEmpty = (title, text) => `<div class="card card-p empty-state"><strong>${title}</strong><p>${text}</p></div>`;
+const normalizeText = value => String(value ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 function renderAdminDash() {
-  const users = Array.isArray(STATE.allContacts) ? STATE.allContacts : [];
-  const services = Array.isArray(SERVICES) ? SERVICES : [];
-  const bookings = Array.isArray(STATE.bookings) ? STATE.bookings : [];
-  const paidBookings = bookings.filter(booking => Number(booking.paid) === 1 && Number(booking.payment_amount) > 0);
-  const commissionTotal = paidBookings.reduce((sum, booking) => sum + Number(booking.commission || 0), 0);
-  const roleCounts = [
-    ['Clientes', users.filter(user => user.role === 'cliente').length, '#818cf8'],
-    ['Prestadores', users.filter(user => user.role === 'prestador').length, '#22d3ee'],
-    ['Administradores', users.filter(user => user.role === 'admin').length, '#f59e0b'],
-  ];
+  const { summary, services, bookings } = adminData();
   const categories = [...new Set(services.map(service => String(service.category || '').trim()).filter(Boolean))]
     .map(category => [category, services.filter(service => service.category === category).length])
     .sort((a, b) => b[1] - a[1]);
-  const totalUsers = users.length;
+  const roleCounts = [['Clientes', summary.clients || 0, '#818cf8'], ['Prestadores', summary.providers || 0, '#22d3ee'], ['Administradores', summary.admins || 0, '#f59e0b']];
   const maxRole = Math.max(...roleCounts.map(([, count]) => count), 1);
   const maxCategory = Math.max(...categories.map(([, count]) => count), 1);
-  const stats = [
-    [String(totalUsers), 'Usuarios registrados', '#22d3ee'],
-    [String(services.filter(service => service.available).length), 'Servicios activos', '#818cf8'],
-    [String(bookings.length), 'Reservas registradas', '#4ade80'],
-    [COP(commissionTotal), 'Comisiones de pagos confirmados', '#f59e0b'],
-  ];
+  const recent = bookings.slice(0, 5);
   return `
     <h2 style="font-size:28px;font-weight:700;margin:0 0 4px">Panel de <span class="gradient-text">Administrador</span></h2>
-    <p style="color:#64748b;margin:0 0 24px">Resumen basado en los registros reales de Servi Choquib.</p>
-    <div class="grid-4" style="margin-bottom:28px">
-      ${stats.map(([value, label, color]) => `<div class="stat-card"><p class="mono" style="font-size:24px;font-weight:700;color:${color};margin:0 0 4px">${escapeHtml(value)}</p><p style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#e2e8f0;margin:0">${escapeHtml(label)}</p></div>`).join('')}
+    <p style="color:#64748b;margin:0 0 24px">Resumen basado en los registros reales de Servi Choquib. Valores en COP.</p>
+    <div class="grid-4" style="margin-bottom:16px">
+      ${adminStat(String(summary.users || 0), `Usuarios (${summary.activeUsers || 0} activos)`, '#22d3ee')}
+      ${adminStat(String(summary.activeServices || 0), `Servicios activos de ${summary.services || 0}`, '#818cf8')}
+      ${adminStat(String(summary.bookings || 0), `Reservas (${summary.pendingBookings || 0} pendientes)`, '#4ade80')}
+      ${adminStat(COP(summary.totalPaid || 0), 'Pagos confirmados', '#22d3ee')}
     </div>
-    <div class="grid-2">
+    <div class="grid-4" style="margin-bottom:28px">
+      ${adminStat(COP(summary.commissionRevenue || 0), 'Comisiones (10%)', '#f59e0b')}
+      ${adminStat(String(summary.paidTransactions || 0), 'Transacciones pagadas', '#4ade80')}
+      ${adminStat(String(summary.unpaidBookings || 0), 'Reservas sin pago', '#f87171')}
+      ${adminStat(String(summary.suspendedUsers || 0), 'Cuentas suspendidas', '#fbbf24')}
+    </div>
+    <div class="grid-2" style="margin-bottom:20px">
       <div class="card card-p" style="border-radius:14px">
         <p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 14px;color:#94a3b8">Usuarios por rol</p>
-        ${totalUsers ? roleCounts.map(([label, count, color]) => `<div style="margin-bottom:12px">
+        ${roleCounts.map(([label, count, color]) => `<div style="margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#e2e8f0">${label}</span><span class="mono" style="font-size:12px;color:${color}">${count}</span></div>
-          <div class="progress"><div class="progress-fill" style="width:${Math.round((count / maxRole) * 100)}%;background:${color}"></div></div>
-        </div>`).join('') : '<div class="empty-state"><strong>Aún no hay usuarios registrados.</strong><p>Cuando se registren usuarios, su distribución aparecerá aquí.</p></div>'}
+          <div class="progress"><div class="progress-fill" style="width:${Math.round((count / maxRole) * 100)}%;background:${color}"></div></div></div>`).join('')}
       </div>
       <div class="card card-p" style="border-radius:14px">
         <p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 14px;color:#94a3b8">Servicios por categoría</p>
         ${categories.length ? categories.map(([category, count]) => `<div style="margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;color:#e2e8f0">${escapeHtml(category)}</span><span class="mono" style="font-size:12px;color:#64748b">${count}</span></div>
-          <div class="progress"><div class="progress-fill" style="width:${Math.round((count / maxCategory) * 100)}%"></div></div>
-        </div>`).join('') : '<div class="empty-state"><strong>Aún no hay servicios publicados.</strong><p>Las categorías aparecerán cuando los prestadores publiquen servicios.</p></div>'}
+          <div class="progress"><div class="progress-fill" style="width:${Math.round((count / maxCategory) * 100)}%"></div></div></div>`).join('') : '<div class="empty-state"><strong>Aún no hay servicios publicados.</strong></div>'}
       </div>
+    </div>
+    <div class="card card-p" style="border-radius:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0;color:#94a3b8">Últimas reservas</p><button class="btn-outline btn-sm" onclick="navigate('transactions')">Ver todas</button></div>
+      ${recent.length ? recent.map(booking => `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid rgba(34,211,238,0.08)"><span style="font-size:13px">${escapeHtml(booking.title)} <span style="color:#64748b">· ${escapeHtml(booking.client)}</span></span><span class="mono" style="font-size:13px;color:#22d3ee">${COP(booking.total)} ${isPaidBooking(booking) ? badge('Pagado', 'green') : badge('Sin pago', 'red')}</span></div>`).join('') : '<div class="empty-state"><strong>Aún no hay reservas.</strong></div>'}
     </div>`;
+}
+
+function setAdminFilter(key, value) {
+  STATE.adminFilters[key] = value;
+  renderView(STATE.activeView);
+  // renderView reemplaza el DOM: devolver el foco al buscador activo.
+  const input = document.getElementById(`admin-${key}`);
+  if (input && input.tagName === 'INPUT') { input.focus(); input.setSelectionRange(value.length, value.length); }
 }
 
 function renderAdminUsers() {
   const rc = role => role === 'admin' ? 'amber' : role === 'prestador' ? 'cyan' : 'purple';
-  const users = Array.isArray(STATE.allContacts) ? STATE.allContacts : [];
+  const { userSearch, userRole } = STATE.adminFilters;
+  const query = normalizeText(userSearch);
+  const users = adminData().users.filter(user =>
+    (userRole === 'todos' || user.role === userRole) &&
+    (!query || normalizeText(`${user.name} ${user.email} ${user.location}`).includes(query)));
   return `
-    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px">Gestión de usuarios <span class="mono" style="color:#22d3ee">(${users.length})</span></h2>
+    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:16px">Gestión de usuarios <span class="mono" style="color:#22d3ee">(${users.length})</span></h2>
+    <div class="admin-toolbar">
+      <input class="input" id="admin-userSearch" type="search" placeholder="Buscar por nombre, correo o ubicación" value="${escapeHtml(userSearch)}" oninput="setAdminFilter('userSearch', this.value)" />
+      <select class="input" id="admin-userRole" onchange="setAdminFilter('userRole', this.value)">
+        ${[['todos', 'Todos los roles'], ['cliente', 'Clientes'], ['prestador', 'Prestadores'], ['admin', 'Administradores']].map(([value, label]) => `<option value="${value}" ${userRole === value ? 'selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </div>
     ${users.length ? `<div class="overflow-x"><table class="data-table">
-      <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Ubicación</th><th>Estado</th></tr></thead>
-      <tbody>${users.map(user => `<tr>
+      <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Ubicación</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>${users.map(user => {
+        const active = user.isActive !== false;
+        const isSelfOrAdmin = user.role === 'admin' || String(user.id) === String(STATE.user.id);
+        return `<tr>
         <td><div style="display:flex;align-items:center;gap:10px">${avatar(user.avatar, 32, roleColor(user.role), user.profile_image)}<span style="font-family:'Outfit',sans-serif;font-weight:500">${escapeHtml(user.name)}</span></div></td>
         <td style="color:#64748b;font-size:13px">${escapeHtml(user.email)}</td>
         <td>${badge(user.role, rc(user.role))}</td>
         <td style="color:#64748b;font-size:13px">${escapeHtml(user.location || '—')}</td>
-        <td>${badge('Registrado', 'green')}</td>
-      </tr>`).join('')}</tbody>
-    </table></div>` : '<div class="card card-p empty-state"><strong>Todavía no hay usuarios registrados.</strong><p>Los usuarios aparecerán aquí cuando creen una cuenta en Servi Choquib.</p></div>'}`;
+        <td>${active ? badge('Activo', 'green') : badge('Suspendido', 'red')}</td>
+        <td>${isSelfOrAdmin ? '<span style="color:#64748b;font-size:12px">—</span>' : `<button class="${active ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="adminSetUserStatus('${escapeHtml(user.id)}', ${!active})">${active ? 'Suspender' : 'Reactivar'}</button>`}</td>
+      </tr>`; }).join('')}</tbody>
+    </table></div>` : adminEmpty('Sin resultados.', 'Ajusta la búsqueda o el filtro de rol.')}`;
 }
 
 function renderAdminTransactions() {
-  const bookings = Array.isArray(STATE.bookings) ? STATE.bookings : [];
-  const paidBookings = bookings.filter(booking => Number(booking.paid) === 1 && Number(booking.payment_amount) > 0);
-  const paidVolume = paidBookings.reduce((sum, booking) => sum + Number(booking.payment_amount || 0), 0);
-  const commission = paidBookings.reduce((sum, booking) => sum + Number(booking.commission || 0), 0);
-  const stats = [[COP(paidVolume), 'Pagos confirmados', '#22d3ee'], [COP(commission), 'Comisiones confirmadas', '#f59e0b'], [String(paidBookings.length), 'Pagos registrados', '#4ade80']];
+  const { payment } = STATE.adminFilters;
+  const all = adminData().bookings;
+  const paid = all.filter(isPaidBooking);
+  const paidVolume = paid.reduce((sum, booking) => sum + Number(booking.payment_amount || 0), 0);
+  const commission = paid.reduce((sum, booking) => sum + Number(booking.commission || 0), 0);
+  const pendingVolume = all.filter(booking => !isPaidBooking(booking) && booking.status !== 'cancelado').reduce((sum, booking) => sum + Number(booking.total || 0), 0);
+  const bookings = all.filter(booking => payment === 'todos' || (payment === 'pagado' ? isPaidBooking(booking) : !isPaidBooking(booking)));
+  const paymentBadge = booking => isPaidBooking(booking) ? badge('Pagado', 'green') : booking.payment_status === 'revisar' ? badge('Revisar monto', 'amber') : booking.status === 'cancelado' ? badge('Cancelada', 'red') : badge(booking.payment_status === 'pendiente' ? 'Pago en curso' : 'Sin pago', 'red');
   return `
     <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px">Control de transacciones</h2>
-    <div class="grid-3" style="margin-bottom:24px">${stats.map(([value, label, color]) => `<div class="stat-card"><p class="mono" style="font-size:18px;font-weight:700;color:${color};margin:0 0 4px">${escapeHtml(value)}</p><p style="font-family:'Outfit',sans-serif;font-size:13px;color:#94a3b8;margin:0">${escapeHtml(label)}</p></div>`).join('')}</div>
+    <div class="grid-4" style="margin-bottom:20px">
+      ${adminStat(COP(paidVolume), 'Pagos confirmados', '#22d3ee')}
+      ${adminStat(COP(commission), 'Comisiones confirmadas', '#f59e0b')}
+      ${adminStat(COP(pendingVolume), 'Por cobrar', '#f87171')}
+      ${adminStat(String(paid.length), 'Pagos registrados', '#4ade80')}
+    </div>
+    <div class="admin-toolbar">
+      <select class="input" id="admin-payment" onchange="setAdminFilter('payment', this.value)">
+        ${[['todos', 'Todas las reservas'], ['pagado', 'Solo pagadas'], ['sin_pago', 'Sin pago confirmado']].map(([value, label]) => `<option value="${value}" ${payment === value ? 'selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </div>
     ${bookings.length ? `<div class="overflow-x"><table class="data-table">
-      <thead><tr><th>ID</th><th>Servicio</th><th>Cliente</th><th>Prestador</th><th>Valor</th><th>Comisión</th><th>Estado reserva</th><th>Pago</th></tr></thead>
+      <thead><tr><th>ID</th><th>Servicio</th><th>Cliente</th><th>Prestador</th><th>Valor</th><th>Comisión</th><th>Reserva</th><th>Pago</th></tr></thead>
       <tbody>${bookings.map(booking => `<tr>
-        <td class="mono" style="font-size:12px;color:#64748b">${escapeHtml(booking.id).toUpperCase()}</td>
+        <td class="mono" style="font-size:12px;color:#64748b">${escapeHtml(String(booking.id).slice(0, 10)).toUpperCase()}</td>
         <td style="font-family:'Outfit',sans-serif;font-weight:500">${escapeHtml(booking.title)}</td>
         <td style="color:#94a3b8;font-size:13px">${escapeHtml(booking.client)}</td>
         <td style="color:#94a3b8;font-size:13px">${escapeHtml(booking.provider)}</td>
         <td class="mono" style="color:#22d3ee">${COP(booking.total)}</td>
-        <td class="mono" style="color:#f59e0b">${Number(booking.paid) === 1 ? COP(booking.commission) : '—'}</td>
+        <td class="mono" style="color:#f59e0b">${isPaidBooking(booking) ? COP(booking.commission) : '—'}</td>
         <td>${statusBadge(booking.status)}</td>
-        <td>${Number(booking.paid) === 1 && Number(booking.payment_amount) > 0 ? badge('Pagado', 'green') : badge('Sin pago confirmado', 'red')}</td>
+        <td>${paymentBadge(booking)}</td>
       </tr>`).join('')}</tbody>
-    </table></div>` : '<div class="card card-p empty-state"><strong>Aún no hay reservas registradas.</strong><p>Las reservas aparecerán aquí cuando un cliente solicite un servicio.</p></div>'}`;
+    </table></div>` : adminEmpty('Sin reservas para este filtro.', 'Las reservas aparecerán aquí cuando un cliente solicite un servicio.')}`;
 }
 
 function renderAdminServices() {
-  const services = Array.isArray(SERVICES) ? SERVICES : [];
+  const { serviceSearch, serviceState } = STATE.adminFilters;
+  const query = normalizeText(serviceSearch);
+  const services = adminData().services.filter(service =>
+    (serviceState === 'todos' || (serviceState === 'activos') === Boolean(service.available)) &&
+    (!query || normalizeText(`${service.title} ${service.provider} ${service.category}`).includes(query)));
   return `
-    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px">Servicios publicados <span class="mono" style="color:#22d3ee">(${services.length})</span></h2>
+    <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;margin-bottom:16px">Servicios publicados <span class="mono" style="color:#22d3ee">(${services.length})</span></h2>
+    <div class="admin-toolbar">
+      <input class="input" id="admin-serviceSearch" type="search" placeholder="Buscar por título, prestador o categoría" value="${escapeHtml(serviceSearch)}" oninput="setAdminFilter('serviceSearch', this.value)" />
+      <select class="input" id="admin-serviceState" onchange="setAdminFilter('serviceState', this.value)">
+        ${[['todos', 'Todos'], ['activos', 'Activos'], ['inactivos', 'Inactivos']].map(([value, label]) => `<option value="${value}" ${serviceState === value ? 'selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       ${services.map(service => `
-        <div class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px">
+        <div class="card" style="padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <img src="${dashboardServiceImage(service)}" onerror="this.onerror=null;this.src='/assets/servi-choquib-icon.png'" alt="${escapeHtml(service.title)}" style="width:52px;height:52px;border-radius:8px;object-fit:cover" loading="lazy" />
-          <div style="flex:1;min-width:0"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(service.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(service.provider)} · ${escapeHtml(service.category)} · ${COP(service.price)}</p></div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${badge(service.available ? 'Activo' : 'Inactivo', service.available ? 'green' : 'red')}</div>
-        </div>`).join('') || '<div class="card card-p empty-state"><strong>Aún no hay servicios publicados.</strong><p>Los servicios creados por los prestadores aparecerán aquí.</p></div>'}
+          <div style="flex:1;min-width:180px"><p style="font-family:'Outfit',sans-serif;font-weight:600;margin:0 0 2px">${escapeHtml(service.title)}</p><p style="font-size:12px;color:#64748b;margin:0">${escapeHtml(service.provider)} · ${escapeHtml(service.category)} · ${COP(service.price)}</p></div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${badge(service.available ? 'Activo' : 'Inactivo', service.available ? 'green' : 'red')}
+            <button class="${service.available ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="adminSetServiceStatus('${escapeHtml(service.id)}', ${!service.available})">${service.available ? 'Desactivar' : 'Activar'}</button></div>
+        </div>`).join('') || adminEmpty('Sin resultados.', 'Ajusta la búsqueda o el filtro de estado.')}
     </div>`;
 }
+
+async function adminAction(path, body, confirmText) {
+  if (confirmText && !confirm(confirmText)) return;
+  try {
+    await apiRequest(path, { method: 'PATCH', body: JSON.stringify(body) });
+    STATE.admin = await apiRequest('/admin/dashboard');
+    renderView(STATE.activeView);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+const adminSetUserStatus = (id, isActive) => adminAction(`/admin/users/${encodeURIComponent(id)}/status`, { isActive },
+  isActive ? null : 'La cuenta no podrá iniciar sesión hasta ser reactivada. ¿Suspender?');
+const adminSetServiceStatus = (id, available) => adminAction(`/admin/services/${encodeURIComponent(id)}/status`, { available },
+  available ? null : 'El servicio dejará de ser reservable. ¿Desactivar?');
 
 // ── TERMS ──────────────────────────────────────────────────────
 function openTerms() {

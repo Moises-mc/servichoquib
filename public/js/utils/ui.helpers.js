@@ -8,7 +8,8 @@ const safeImageUrl = value => {
 };
 
 // ── Helpers ────────────────────────────────────────────────────
-const COP = n => '$' + n.toLocaleString('es-CO') + ' COP';
+// Pesos colombianos sin decimales: $50.000 COP. Tolera null/undefined/strings numéricos.
+const COP = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO') + ' COP';
 const icon = id => `<i data-lucide="${id}" aria-hidden="true" class="icon"></i>`;
 const refreshIcons = () => { if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.8 } }); };
 const smallIcon = id => `<svg width="14" height="14"><use href="#ic-${id}"/></svg>`;

@@ -16,6 +16,7 @@ export async function login(req, res) {
     throw new HttpError(401, 'Correo o contraseña incorrectos.');
   }
   if (!user.emailVerified) throw new HttpError(403, 'Debes verificar tu correo antes de iniciar sesión.');
+  if (user.isActive === false) throw new HttpError(403, 'Tu cuenta está suspendida. Contacta al administrador.');
   return res.json({ user: UserModel.toPublic(user), token: signUser(user) });
 }
 

@@ -26,3 +26,5 @@ const USERS_DATA = [];
 
 
 STATE.editingServiceId = null;
+STATE.admin = null;
+STATE.adminFilters = { userSearch: '', userRole: 'todos', serviceSearch: '', serviceState: 'todos', payment: 'todos' };

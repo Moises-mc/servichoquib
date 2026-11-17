@@ -72,11 +72,13 @@ async function loadRemoteData() {
   const services = await apiRequest('/services');
   SERVICES = services.services;
   if (!STATE.user) return;
-  const [bookings, contacts, conversations] = await Promise.all([
+  const [bookings, contacts, conversations, adminData] = await Promise.all([
     apiRequest('/bookings'),
     apiRequest('/contacts'),
     apiRequest('/conversations'),
+    STATE.user.role === 'admin' ? apiRequest('/admin/dashboard') : Promise.resolve(null),
   ]);
+  STATE.admin = adminData;
   STATE.bookings = bookings.bookings;
   // allContacts se conserva para abrir perfiles desde el catálogo; la bandeja de chat
   // contiene exclusivamente personas con al menos un mensaje intercambiado.

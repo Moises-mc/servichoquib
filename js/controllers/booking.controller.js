@@ -78,7 +78,6 @@ function renderBookingStep() {
         <button class="btn-primary flex-1" style="padding:11px" onclick="if(STATE.contractAccepted){STATE.bookingStep='pay';renderBookingStep()}">Continuar al pago</button>
       </div>`;
   } else if (step === 'pay') {
-    const methods = [['nequi', '📱 Nequi'], ['card', '💳 Tarjeta débito/crédito'], ['bancolombia', '🏦 Bancolombia']];
     body = `
       <div style="background:rgba(17,27,84,0.5);border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid rgba(34,211,238,0.1)">
         <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#94a3b8">Servicio</span><span class="mono" style="font-size:13px">${COP(s.price)}</span></div>
@@ -86,14 +85,10 @@ function renderBookingStep() {
         <div class="divider"></div>
         <div style="display:flex;justify-content:space-between"><span style="font-family:'Outfit',sans-serif;font-weight:700">Total</span><span class="mono" style="font-weight:700;color:#22d3ee;font-size:16px">${COP(s.price)}</span></div>
       </div>
-      <p style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;color:#94a3b8;margin-bottom:10px">Método de pago (Sandbox)</p>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        ${methods.map(([m, l]) => `<button id="pay-btn-${m}" onclick="selectPayMethod('${m}')" style="padding:12px 16px;border-radius:10px;border:2px solid ${STATE.bookingPayMethod === m ? '#22d3ee' : 'rgba(34,211,238,0.15)'};background:${STATE.bookingPayMethod === m ? 'rgba(34,211,238,0.08)' : 'transparent'};color:${STATE.bookingPayMethod === m ? '#22d3ee' : '#94a3b8'};font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:all 0.15s">${l}</button>`).join('')}
-      </div>
-      <div class="warn-box" style="margin-bottom:16px">⚠️ Modo Sandbox (Wompi/PayU) — No se realizarán cobros reales.</div>
+      <div class="warn-box" style="margin-bottom:16px">🔒 Te llevaremos a la página segura de <strong>Rapyd</strong> para elegir entre los métodos de pago disponibles. Los precios están en pesos colombianos (COP).</div>
       <div style="display:flex;gap:10px">
         <button class="btn-outline flex-1" style="padding:11px" onclick="STATE.bookingStep='contract';renderBookingStep()">Atrás</button>
-        <button class="btn-primary flex-1" style="padding:11px;font-size:14px" onclick="completeBooking()">Pagar ${COP(s.price)}</button>
+        <button id="pay-submit" class="btn-primary flex-1" style="padding:11px;font-size:14px" onclick="completeBooking()">Pagar ${COP(s.price)}</button>
       </div>`;
   } else if (step === 'success') {
     document.getElementById('modal-booking-box').innerHTML = `
@@ -123,25 +118,28 @@ function renderBookingStep() {
     </div>`;
 }
 
-function selectPayMethod(m) {
-  STATE.bookingPayMethod = m;
-  document.querySelectorAll('[id^="pay-btn-"]').forEach(el => {
-    const isActive = el.id === `pay-btn-${m}`;
-    el.style.borderColor = isActive ? '#22d3ee' : 'rgba(34,211,238,0.15)';
-    el.style.background = isActive ? 'rgba(34,211,238,0.08)' : 'transparent';
-    el.style.color = isActive ? '#22d3ee' : '#94a3b8';
-  });
+// Redirige al Checkout alojado de Rapyd. El monto lo calcula el servidor desde la reserva.
+async function startRapydCheckout(bookingId) {
+  const checkout = await apiRequest('/payments/checkout', { method: 'POST', body: JSON.stringify({ bookingId }) });
+  if (!checkout.checkoutUrl) throw new Error('No se recibió la página de pago.');
+  window.location.assign(checkout.checkoutUrl);
 }
 
 async function completeBooking() {
+  const button = document.getElementById('pay-submit');
+  if (button) { button.disabled = true; button.textContent = 'Redirigiendo a Rapyd…'; }
   try {
-    await apiRequest('/bookings', { method: 'POST', body: JSON.stringify({ serviceId: STATE.currentService.id, date: STATE.bookingDate, note: STATE.bookingNote }) });
-    STATE.bookingStep = 'success';
-    await loadRemoteData();
-    renderBookingStep();
+    const { bookingId } = await apiRequest('/bookings', { method: 'POST', body: JSON.stringify({ serviceId: STATE.currentService.id, date: STATE.bookingDate, note: STATE.bookingNote }) });
+    await startRapydCheckout(bookingId);
   } catch (error) {
+    if (button) { button.disabled = false; button.textContent = `Pagar ${COP(STATE.currentService.price)}`; }
     alert(error.message);
   }
+}
+
+// Reintento de pago desde "Mis servicios" (reserva creada pero pago no completado).
+async function payBooking(bookingId) {
+  try { await startRapydCheckout(bookingId); } catch (error) { alert(error.message); }
 }
 
 // ── PROVIDER VIEWS ──────────────────────────────────────────────

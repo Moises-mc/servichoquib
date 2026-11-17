@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Pago Exitoso! — ServiChoquib</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2e7d32;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #2e7d32;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1b5e20;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="icon" id="icon">⏳</div>
+        <h1 id="title">Confirmando tu pago…</h1>
+        <p id="msg">Estamos verificando el pago con Rapyd. Esto toma unos segundos.</p>
+        <a href="/" class="btn">Volver al inicio</a>
+    </div>
+    <script src="js/config.js"></script>
+    <script>
+        // La confirmación real llega por webhook; aquí solo se consulta el estado guardado.
+        (async function () {
+            const $ = id => document.getElementById(id);
+            const bookingId = new URLSearchParams(location.search).get('booking');
+            const token = localStorage.getItem('servilocal_token');
+            const cop = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO') + ' COP';
+            if (!bookingId || !token) { $('icon').textContent = 'ℹ️'; $('title').textContent = 'Inicia sesión para ver el estado'; $('msg').textContent = 'Entra a Servi Choquib y revisa "Mis servicios" para ver tu pago.'; return; }
+            for (let attempt = 0; attempt < 10; attempt++) {
+                try {
+                    const response = await fetch(`${window.SERVI_API_URL}/payments/status/${encodeURIComponent(bookingId)}`, { headers: { Authorization: `Bearer ${token}` } });
+                    const data = await response.json();
+                    if (response.ok && data.paid) {
+                        $('icon').textContent = '✅'; $('title').textContent = '¡Pago realizado con éxito!';
+                        $('msg').textContent = `Recibimos ${cop(data.paymentAmount)} por "${data.title}". Gracias por confiar en Servi Choquib.`; return;
+                    }
+                    if (response.ok && ['fallido', 'expirado', 'cancelado'].includes(data.paymentStatus)) {
+                        $('icon').textContent = '❌'; $('title').textContent = 'El pago no se completó'; $('msg').textContent = 'No se realizó ningún cobro. Puedes reintentar desde "Mis servicios".'; return;
+                    }
+                } catch (error) { /* reintenta */ }
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            $('icon').textContent = '⏳'; $('title').textContent = 'Pago en proceso';
+            $('msg').textContent = 'Aún no recibimos la confirmación. Revisa "Mis servicios" en unos minutos.';
+        })();
+    </script>
+</body>
+
+</html>

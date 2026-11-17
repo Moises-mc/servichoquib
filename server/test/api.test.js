@@ -233,3 +233,65 @@ test('validación y autenticación rechazan datos incompletos', async () => {
   const protectedRoute = await request('/api/bookings');
   assert.equal(protectedRoute.status, 401);
 });
+
+
+import crypto from 'node:crypto';
+
+function rapydHeaders(url, body) {
+  const salt = crypto.randomBytes(6).toString('hex');
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const hex = crypto.createHmac('sha256', 'test_secret').update(`${url}${salt}${timestamp}test_accesstest_secret${body}`).digest('hex');
+  return { salt, timestamp, signature: Buffer.from(hex).toString('base64') };
+}
+
+async function sendWebhook(event, { sign = true } = {}) {
+  const raw = JSON.stringify(event);
+  const url = `${baseUrl}/api/payments/webhook`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(sign ? rapydHeaders(url, raw) : {}) },
+    body: raw,
+  });
+  return response.status;
+}
+
+test('panel admin: solo administradores; suspender bloquea el inicio de sesión', async () => {
+  assert.equal((await request('/api/admin/dashboard', { token: anaToken })).status, 403);
+  const dashboard = await request('/api/admin/dashboard', { token: adminToken });
+  assert.equal(dashboard.status, 200);
+  assert.ok(dashboard.data.summary.users >= 1);
+  const carlos = dashboard.data.users.find(user => user.email === 'carlos@email.com');
+  const suspended = await request(`/api/admin/users/${carlos.id}/status`, { token: adminToken, method: 'PATCH', body: { isActive: false } });
+  assert.equal(suspended.status, 200);
+  assert.equal((await request('/api/login', { method: 'POST', body: { identifier: 'carlos@email.com', password: 'carlos12345' } })).status, 403);
+  assert.equal((await request('/api/bookings', { token: carlosToken })).status, 403);
+  await request(`/api/admin/users/${carlos.id}/status`, { token: adminToken, method: 'PATCH', body: { isActive: true } });
+  assert.equal((await request('/api/login', { method: 'POST', body: { identifier: 'carlos@email.com', password: 'carlos12345' } })).status, 200);
+  const toggled = await request('/api/admin/services/s1/status', { token: adminToken, method: 'PATCH', body: { available: false } });
+  assert.equal(toggled.data.service.available, false);
+  await request('/api/admin/services/s1/status', { token: adminToken, method: 'PATCH', body: { available: true } });
+});
+
+test('pagos Rapyd: permisos, firma del webhook y confirmación en COP', async () => {
+  const created = await request('/api/bookings', { token: anaToken, method: 'POST', body: { serviceId: 's4', date: '2026-12-05' } });
+  const id = created.data.booking.id;
+  assert.equal((await request('/api/payments/checkout', { method: 'POST', body: { bookingId: id } })).status, 401);
+  assert.equal((await request('/api/payments/checkout', { token: marcoToken, method: 'POST', body: { bookingId: id } })).status, 403);
+
+  const event = { type: 'PAYMENT_COMPLETED', data: { merchant_reference_id: id, amount: 50000, currency_code: 'COP' } };
+  assert.equal(await sendWebhook(event, { sign: false }), 401);
+  assert.equal((await request(`/api/payments/status/${id}`, { token: anaToken })).data.paid, false);
+
+  // monto distinto al de la reserva: no se marca como pagada
+  assert.equal(await sendWebhook({ ...event, data: { ...event.data, amount: 1 } }), 200);
+  const review = await request(`/api/payments/status/${id}`, { token: anaToken });
+  assert.equal(review.data.paid, false);
+  assert.equal(review.data.paymentStatus, 'revisar');
+
+  assert.equal(await sendWebhook(event), 200);
+  const paid = await request(`/api/payments/status/${id}`, { token: anaToken });
+  assert.equal(paid.data.paid, true);
+  assert.equal(paid.data.paymentAmount, 50000);
+  assert.equal((await request('/api/payments/status/' + id, { token: carlosToken })).status, 403);
+  assert.equal((await request('/api/payments/checkout', { token: anaToken, method: 'POST', body: { bookingId: id } })).status, 409);
+});

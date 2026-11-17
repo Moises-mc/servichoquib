@@ -24,6 +24,8 @@ export async function dashboard(_req, res) {
     pendingBookings: bookings.filter(booking => booking.status === 'pendiente').length,
     completedBookings: bookings.filter(booking => booking.status === 'completado').length,
     paidTransactions: paidBookings.length,
+    unpaidBookings: bookings.filter(booking => booking.status !== 'cancelado' && Number(booking.paid) !== 1).length,
+    suspendedUsers: users.length - activeUsers.length,
     totalPaid,
     commissionRevenue,
   };
@@ -35,7 +37,7 @@ export async function setUserStatus(req, res) {
   if (!user) throw new HttpError(404, 'Usuario no encontrado.');
   if (String(user.id) === String(req.user.id)) throw new HttpError(400, 'No puedes suspender tu propia cuenta.');
   if (user.role === 'admin') throw new HttpError(403, 'Por seguridad, no se puede suspender una cuenta administradora desde este panel.');
-  const isActive = req.body.isActive === true;
+  const isActive = req.body.isActive === true || req.body.isActive === 'true';
   const updated = await UserModel.update(user, { isActive });
   return res.json({ user: UserModel.toPublic(updated), message: isActive ? 'Cuenta reactivada.' : 'Cuenta suspendida.' });
 }
@@ -43,6 +45,6 @@ export async function setUserStatus(req, res) {
 export async function setServiceStatus(req, res) {
   const service = await ServiceModel.findById(req.params.id);
   if (!service) throw new HttpError(404, 'Servicio no encontrado.');
-  const updated = await ServiceModel.update(service, { available: req.body.available === true });
+  const updated = await ServiceModel.update(service, { available: req.body.available === true || req.body.available === 'true' });
   return res.json({ service: updated, message: updated.available ? 'Servicio activado.' : 'Servicio desactivado.' });
 }

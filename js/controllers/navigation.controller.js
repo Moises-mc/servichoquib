@@ -75,6 +75,7 @@ function toggleMenu() {
   backdrop.classList.toggle('visible', isOpen);
   toggle.setAttribute('aria-expanded', String(isOpen));
   toggle.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+  document.body.classList.toggle('menu-open', isOpen);
 }
 
 function closeMenu() {
@@ -86,11 +87,13 @@ function closeMenu() {
   backdrop.classList.remove('visible');
   toggle.setAttribute('aria-expanded', 'false');
   toggle.setAttribute('aria-label', 'Abrir menú');
+  document.body.classList.remove('menu-open');
 }
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeMenu();
 });
+window.matchMedia('(min-width: 761px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
 // ── View Router ────────────────────────────────────────────────
 function renderView(view) {

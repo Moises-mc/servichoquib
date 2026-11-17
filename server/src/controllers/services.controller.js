@@ -12,7 +12,7 @@ export async function listServices(_req, res) {
 export async function createService(req, res) {
   const title = req.body.title.trim();
   if (Object.hasOwn(req.body, 'img')) validateServiceImage(req.body.img);
-  const price = Number(req.body.price);
+  const price = Math.round(Number(req.body.price));
   if (!Number.isFinite(price) || price <= 0) throw new HttpError(400, 'El precio debe ser un número mayor que cero.');
   const service = await ServiceModel.create({
     title, price, category: req.body.category.trim(), desc: String(req.body.desc || '').trim(),

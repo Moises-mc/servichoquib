@@ -179,7 +179,7 @@ function renderHistory() {
             <td style="color:#94a3b8">${escapeHtml(b.provider)}</td>
             <td class="mono" style="font-size:12px;color:#64748b">${escapeHtml(b.date)}</td>
             <td class="mono" style="color:#22d3ee">${COP(b.total)}</td>
-            <td>${statusBadge(b.status)} ${b.status === 'confirmado' ? `<button class="btn-primary btn-sm" onclick="changeBookingStatus('${b.id}','completado')">Aceptar servicio</button>` : ''} ${b.status === 'completado' ? `<button class="btn-outline btn-sm" onclick="openReview('${b.id}')">Calificar</button>` : ''} ${b.status === 'pendiente' || b.status === 'confirmado' ? `<button class="btn-danger" onclick="changeBookingStatus('${b.id}','cancelado')">Cancelar</button>` : ''}</td>
+            <td>${statusBadge(b.status)} ${Number(b.paid) === 1 ? badge('Pagado', 'green') : (b.status !== 'cancelado' && STATE.user.role === 'cliente' ? `<button class="btn-primary btn-sm" onclick="payBooking('${escapeHtml(b.id)}')">Pagar con Rapyd</button>` : '')} ${b.status === 'confirmado' ? `<button class="btn-primary btn-sm" onclick="changeBookingStatus('${b.id}','completado')">Aceptar servicio</button>` : ''} ${b.status === 'completado' ? `<button class="btn-outline btn-sm" onclick="openReview('${b.id}')">Calificar</button>` : ''} ${b.status === 'pendiente' || b.status === 'confirmado' ? `<button class="btn-danger" onclick="changeBookingStatus('${b.id}','cancelado')">Cancelar</button>` : ''}</td>
           </tr>`).join('')}
         </tbody>
       </table>

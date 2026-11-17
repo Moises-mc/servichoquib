@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { query, table } from '../database/db.js';
 const BOOKINGS = table('bookings');
-const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date, note,  status, total, commission, paid, payment_amount, paid_at, created_at, updated_at`;
+const SELECT = `id, service_id, client_id, provider_id, title, provider, client, date, note,  status, total, commission, paid, payment_amount, paid_at, payment_checkout_id, payment_status, created_at, updated_at`;
 function mapBooking(row) {
   if (!row) return null;
   return { ...row, total: Number(row.total), commission: Number(row.commission), paid: Number(row.paid), payment_amount: Number(row.payment_amount) };
@@ -36,7 +36,7 @@ export class BookingModel {
     return mapBooking(rows[0]);
   }
   static async update(booking, changes) {
-    const allowed = new Map([['status', 'status'], ['paid', 'paid'], ['payment_amount', 'payment_amount'], ['paid_at', 'paid_at']]);
+    const allowed = new Map([['status', 'status'], ['paid', 'paid'], ['payment_amount', 'payment_amount'], ['paid_at', 'paid_at'], ['payment_checkout_id', 'payment_checkout_id'], ['payment_status', 'payment_status']]);
     const entries = Object.entries(changes).filter(([key]) => allowed.has(key));
     if (!entries.length) return this.findById(booking.id);
     const assignments = entries.map(([key], index) => `"${allowed.get(key)}" = $${index + 1}`);

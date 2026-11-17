@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago Cancelado — ServiChoquib</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #e65100;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #e65100;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #bf360c;
+        }
+
+        .btn.secundario {
+            background: #757575;
+        }
+
+        .btn.secundario:hover {
+            background: #616161;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="icon">❌</div>
+        <h1>Pago Cancelado</h1>
+        <p>No se completó el pago y no se realizó ningún cobro. Puedes reintentarlo desde "Mis servicios".</p>
+        <a href="/" class="btn">Volver al inicio</a>
+        <a href="javascript:history.back()" class="btn secundario">Reintentar</a>
+    </div>
+</body>
+
+</html>

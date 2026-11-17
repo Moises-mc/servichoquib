@@ -51,6 +51,15 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   paymentsMode: process.env.PAYMENTS_MODE || 'sandbox',
+  rapyd: {
+    accessKey: process.env.RAPYD_ACCESS_KEY || '',
+    secretKey: process.env.RAPYD_SECRET_KEY || '',
+    environment: process.env.RAPYD_ENV === 'production' ? 'production' : 'sandbox',
+    // URL exacta registrada en el portal de Rapyd; se usa para validar la firma del webhook.
+    webhookUrl: (process.env.RAPYD_WEBHOOK_URL || '').trim(),
+    currency: 'COP',
+    country: 'CO',
+  },
   email: { resendApiKey: process.env.RESEND_API_KEY || '', resendFrom: process.env.RESEND_FROM_EMAIL || '', from: process.env.EMAIL_FROM || process.env.GMAIL_USER || '', gmailUser: process.env.GMAIL_USER || '', gmailAppPassword: process.env.GMAIL_APP_PASSWORD || '' },
   sms: { accountSid: process.env.TWILIO_ACCOUNT_SID || '', authToken: process.env.TWILIO_AUTH_TOKEN || '', from: process.env.TWILIO_FROM_NUMBER || '' },
   db: {
