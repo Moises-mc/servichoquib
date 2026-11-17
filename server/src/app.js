@@ -111,8 +111,7 @@ export function createApp({ app: appInstance, enableSockets = true, enableLocalU
 
   app.disable('x-powered-by');
   app.use(...security);
-  // rawBody se conserva para validar la firma HMAC del webhook de Rapyd.
-  app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
+  app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 
   // Vercel enruta las solicitudes al handler Express. Servimos el frontend
